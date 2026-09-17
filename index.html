@@ -2,68 +2,516 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#111827">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#111827"
+    >
 
     <title>DVD Inventory</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #111827;
-            color: #f9fafb;
-        }
-
-        main {
-            width: 100%;
-            max-width: 600px;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: clamp(2rem, 8vw, 4rem);
-            margin-bottom: 12px;
-        }
-
-        p {
-            color: #9ca3af;
-            font-size: 1.1rem;
-            line-height: 1.6;
-        }
-
-        .status {
-            display: inline-block;
-            margin-top: 24px;
-            padding: 10px 18px;
-            border: 1px solid #374151;
-            border-radius: 999px;
-            color: #86efac;
-        }
-    </style>
+    <link
+        rel="stylesheet"
+        href="./css/app.css"
+    >
 </head>
 
 <body>
-    <main>
-        <h1>📀 DVD Inventory</h1>
 
-        <p>
-            Barcode-driven DVD inventory, tote tracking,
-            checkout, and collection management.
-        </p>
+<header class="app-header">
 
-        <div class="status">
-            ✓ Development has begun
+    <a
+        href="#dashboard"
+        class="brand"
+        data-page="dashboard"
+    >
+        <span class="brand-disc">●</span>
+        <span>DVD Inventory</span>
+    </a>
+
+    <button
+        id="menuButton"
+        class="menu-button"
+        type="button"
+        aria-label="Open navigation"
+        aria-expanded="false"
+    >
+        ☰
+    </button>
+
+    <nav
+        id="mainNavigation"
+        class="main-navigation"
+        aria-label="Main navigation"
+    >
+        <button data-page="dashboard">Dashboard</button>
+        <button data-page="inventory">Inventory</button>
+        <button data-page="add">Add DVDs</button>
+        <button data-page="search">Search</button>
+        <button data-page="checkout">Check Out</button>
+        <button data-page="checkin">Check In</button>
+        <button data-page="totes">Totes</button>
+    </nav>
+
+</header>
+
+<main class="app-main">
+
+    <!-- DASHBOARD -->
+
+    <section
+        id="dashboard"
+        class="page active"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">DVD COLLECTION MANAGEMENT</p>
+                <h1>Dashboard</h1>
+                <p>
+                    Scan, locate, check out, and manage DVDs
+                    across your entire tote collection.
+                </p>
+            </div>
         </div>
-    </main>
+
+        <div class="stats-grid">
+
+            <article class="stat-card">
+                <span class="stat-label">DVD Copies</span>
+                <strong id="dvdCount">0</strong>
+                <span class="stat-detail">currently inventoried</span>
+            </article>
+
+            <article class="stat-card">
+                <span class="stat-label">Unique Editions</span>
+                <strong id="editionCount">0</strong>
+                <span class="stat-detail">unique UPCs</span>
+            </article>
+
+            <article class="stat-card">
+                <span class="stat-label">Totes</span>
+                <strong id="toteCount">0</strong>
+                <span class="stat-detail">inventory locations</span>
+            </article>
+
+            <article class="stat-card">
+                <span class="stat-label">Checked Out</span>
+                <strong id="checkoutCount">0</strong>
+                <span class="stat-detail">copies currently out</span>
+            </article>
+
+        </div>
+
+        <h2 class="section-title">Quick Actions</h2>
+
+        <div class="action-grid">
+
+            <button
+                class="action-card"
+                data-page="add"
+            >
+                <span class="action-icon">＋</span>
+
+                <span>
+                    <strong>Add DVDs</strong>
+                    <small>
+                        Select a tote and start scanning.
+                    </small>
+                </span>
+            </button>
+
+            <button
+                class="action-card"
+                data-page="search"
+            >
+                <span class="action-icon">⌕</span>
+
+                <span>
+                    <strong>Find a DVD</strong>
+                    <small>
+                        Search titles, editions, or UPCs.
+                    </small>
+                </span>
+            </button>
+
+            <button
+                class="action-card"
+                data-page="checkout"
+            >
+                <span class="action-icon">→</span>
+
+                <span>
+                    <strong>Check Out</strong>
+                    <small>
+                        Remove a copy from available inventory.
+                    </small>
+                </span>
+            </button>
+
+            <button
+                class="action-card"
+                data-page="checkin"
+            >
+                <span class="action-icon">←</span>
+
+                <span>
+                    <strong>Check In</strong>
+                    <small>
+                        Return a DVD to any tote.
+                    </small>
+                </span>
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- INVENTORY -->
+
+    <section
+        id="inventory"
+        class="page"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">COLLECTION</p>
+                <h1>Inventory</h1>
+                <p>
+                    Browse all DVD editions and their current quantities.
+                </p>
+            </div>
+        </div>
+
+        <div class="empty-state">
+            <div class="empty-icon">▤</div>
+            <h2>No DVDs inventoried yet</h2>
+            <p>
+                Add your first tote and begin scanning DVDs.
+            </p>
+
+            <button
+                class="primary-button"
+                data-page="add"
+            >
+                Add DVDs
+            </button>
+        </div>
+
+    </section>
+
+
+    <!-- ADD DVDs -->
+
+    <section
+        id="add"
+        class="page"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">INVENTORY ENTRY</p>
+                <h1>Add DVDs</h1>
+                <p>
+                    Choose a tote, then scan or manually enter DVD UPCs.
+                </p>
+            </div>
+        </div>
+
+        <div class="workflow-card">
+
+            <label for="addToteCode">
+                Tote
+            </label>
+
+            <div class="scan-row">
+
+                <input
+                    id="addToteCode"
+                    type="text"
+                    placeholder="Scan or enter tote code"
+                    autocomplete="off"
+                >
+
+                <button
+                    class="camera-button"
+                    type="button"
+                    data-camera-target="addToteCode"
+                >
+                    📷 Camera
+                </button>
+
+            </div>
+
+            <label for="addUpc">
+                DVD UPC
+            </label>
+
+            <div class="scan-row">
+
+                <input
+                    id="addUpc"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="Scan or enter UPC"
+                    autocomplete="off"
+                >
+
+                <button
+                    class="camera-button"
+                    type="button"
+                    data-camera-target="addUpc"
+                >
+                    📷 Camera
+                </button>
+
+            </div>
+
+            <p class="helper-text">
+                Hardware barcode scanners can type directly into
+                these fields. Camera scanning will be enabled next.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- SEARCH -->
+
+    <section
+        id="search"
+        class="page"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">LOCATE INVENTORY</p>
+                <h1>Search</h1>
+                <p>
+                    Find DVDs by title, edition, UPC, or tote.
+                </p>
+            </div>
+        </div>
+
+        <div class="workflow-card">
+
+            <label for="searchInput">
+                Search Inventory
+            </label>
+
+            <input
+                id="searchInput"
+                type="search"
+                placeholder="Title, edition, UPC, or tote..."
+                autocomplete="off"
+            >
+
+        </div>
+
+    </section>
+
+
+    <!-- CHECK OUT -->
+
+    <section
+        id="checkout"
+        class="page"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">OUTGOING INVENTORY</p>
+                <h1>Check Out</h1>
+                <p>
+                    Record where a DVD went and who checked it out.
+                </p>
+            </div>
+        </div>
+
+        <div class="workflow-card">
+
+            <label for="checkoutTote">
+                Source Tote
+            </label>
+
+            <input
+                id="checkoutTote"
+                type="text"
+                placeholder="Scan or enter tote code"
+            >
+
+            <label for="checkoutUpc">
+                DVD UPC
+            </label>
+
+            <input
+                id="checkoutUpc"
+                type="text"
+                inputmode="numeric"
+                placeholder="Scan or enter UPC"
+            >
+
+            <label for="checkoutPerson">
+                Checked Out By
+            </label>
+
+            <input
+                id="checkoutPerson"
+                type="text"
+                placeholder="Name"
+            >
+
+            <label for="checkoutDestination">
+                Where Is It Going?
+            </label>
+
+            <input
+                id="checkoutDestination"
+                type="text"
+                placeholder="eBay, Facebook Marketplace, customer, etc."
+            >
+
+            <button
+                class="primary-button"
+                type="button"
+            >
+                Check Out DVD
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- CHECK IN -->
+
+    <section
+        id="checkin"
+        class="page"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">RETURN INVENTORY</p>
+                <h1>Check In</h1>
+                <p>
+                    Return a checked-out DVD to any tote.
+                </p>
+            </div>
+        </div>
+
+        <div class="workflow-card">
+
+            <label for="checkinTote">
+                Destination Tote
+            </label>
+
+            <input
+                id="checkinTote"
+                type="text"
+                placeholder="Scan or enter tote code"
+            >
+
+            <label for="checkinUpc">
+                DVD UPC
+            </label>
+
+            <input
+                id="checkinUpc"
+                type="text"
+                inputmode="numeric"
+                placeholder="Scan or enter UPC"
+            >
+
+            <button
+                class="primary-button"
+                type="button"
+            >
+                Check In DVD
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- TOTES -->
+
+    <section
+        id="totes"
+        class="page"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">STORAGE LOCATIONS</p>
+                <h1>Totes</h1>
+                <p>
+                    Create and manage your physical DVD storage totes.
+                </p>
+            </div>
+        </div>
+
+        <div class="workflow-card">
+
+            <label for="newToteCode">
+                Tote Code
+            </label>
+
+            <input
+                id="newToteCode"
+                type="text"
+                placeholder="Example: TOTE-001"
+            >
+
+            <label for="newToteDescription">
+                Description
+            </label>
+
+            <input
+                id="newToteDescription"
+                type="text"
+                placeholder="Optional description"
+            >
+
+            <label for="newToteLocation">
+                Physical Location
+            </label>
+
+            <input
+                id="newToteLocation"
+                type="text"
+                placeholder="Garage shelf, basement rack, etc."
+            >
+
+            <button
+                class="primary-button"
+                type="button"
+            >
+                Create Tote
+            </button>
+
+        </div>
+
+    </section>
+
+</main>
+
+<footer class="app-footer">
+    DVD Inventory
+    <span>•</span>
+    Barcode-driven collection management
+</footer>
+
+<script src="./js/app.js"></script>
+
 </body>
 </html>
