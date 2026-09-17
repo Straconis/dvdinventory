@@ -2,11 +2,15 @@
     "use strict";
 
     if (!window.DVD_CONFIG) {
-        throw new Error("DVD Inventory configuration was not loaded.");
+        throw new Error(
+            "DVD Inventory configuration was not loaded."
+        );
     }
 
     if (!window.supabase) {
-        throw new Error("Supabase JavaScript library was not loaded.");
+        throw new Error(
+            "Supabase JavaScript library was not loaded."
+        );
     }
 
     const { createClient } = window.supabase;

@@ -1,64 +1,99 @@
-﻿# DVD Inventory Security
+﻿# DVD Inventory Security Model
 
-## Public application code
+## Public Code
 
-DVD Inventory is hosted by GitHub Pages.
+DVD Inventory is hosted on GitHub Pages.
 
 The HTML, CSS, JavaScript, Supabase Project URL, and Supabase publishable
-key are therefore public information.
+key are public.
 
 This is expected.
 
-The publishable key does not grant administrative access.
+The publishable key is not an administrative credential.
 
-## Protected data
-
-Inventory data is protected by:
-
-1. Supabase Authentication
-2. authenticated user JWTs
-3. PostgreSQL Row Level Security
-4. application roles stored in public.profiles
-
-Anonymous users receive no database table permissions.
-
-## Roles
-
-### user
-
-Normal DVD Inventory operation.
-
-Initial users:
-
-- Sam
-- Michael
-
-### admin
-
-Normal operation plus administrative capabilities.
-
-Initial administrator:
-
-- Steve
-
-## Secrets
-
-The following must NEVER be committed to GitHub:
-
-- account passwords
-- Supabase secret key
-- legacy service_role key
-- database password
+---
 
 ## Authentication
 
+Application data requires a valid authenticated Supabase session.
+
+Anonymous users receive no application table permissions.
+
 Public account registration will be disabled.
 
-Accounts are intentionally provisioned by an administrator.
+---
 
-## Auditability
+## Roles
 
-Inventory transactions record the authenticated user's UUID in
-performed_by.
+DVD Inventory currently defines:
 
-The application resolves that UUID through public.profiles for display.
+    user
+    admin
+
+Normal users perform day-to-day inventory operations.
+
+Administrators additionally manage:
+
+- users
+- roles
+- metadata administration
+- enrichment
+- diagnostics
+- administrative inventory corrections
+
+---
+
+## Initial Authorization
+
+Initial users:
+
+    Sam       user
+    Michael   user
+    Steve     admin
+
+Additional administrators may be promoted later.
+
+---
+
+## Administrative Protection
+
+The database protects against:
+
+- self-deactivation
+- self-demotion
+- unauthorized role changes
+- unauthorized account activation changes
+- removal of the final active administrator
+
+Administrative actions are audited.
+
+---
+
+## Secrets
+
+Never commit:
+
+- user passwords
+- Supabase secret keys
+- service_role credentials
+- database passwords
+
+Privileged Supabase Auth administration must execute server-side.
+
+---
+
+## Row Level Security
+
+RLS is enabled on all application tables.
+
+Anonymous access is revoked.
+
+Operational access requires an active authenticated profile.
+
+Administrator-only functionality checks the role stored in
+public.profiles.
+
+UI visibility is NOT considered a security boundary.
+
+Even if somebody manipulates the browser application, PostgreSQL policies
+and protected functions continue to enforce authorization.
