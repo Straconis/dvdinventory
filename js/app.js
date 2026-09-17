@@ -121,3 +121,119 @@ const initialPage =
     "dashboard";
 
 showPage(initialPage);
+
+
+// ------------------------------------------------------------
+// Export UI
+// ------------------------------------------------------------
+
+let selectedExportFormat = "csv";
+
+const exportScopeInputs =
+    document.querySelectorAll('input[name="exportScope"]');
+
+const exportToteOptions =
+    document.getElementById("exportToteOptions");
+
+const exportHistoryOptions =
+    document.getElementById("exportHistoryOptions");
+
+const exportFormatButtons =
+    document.querySelectorAll("[data-export-format]");
+
+const exportButton =
+    document.getElementById("exportButton");
+
+
+function updateExportOptions() {
+
+    const selectedScope =
+        document.querySelector(
+            'input[name="exportScope"]:checked'
+        )?.value;
+
+    if (exportToteOptions) {
+
+        const needsTote =
+            selectedScope === "tote" ||
+            selectedScope === "totes";
+
+        exportToteOptions.classList.toggle(
+            "hidden",
+            !needsTote
+        );
+
+    }
+
+    if (exportHistoryOptions) {
+
+        exportHistoryOptions.classList.toggle(
+            "hidden",
+            selectedScope !== "history"
+        );
+
+    }
+
+}
+
+
+exportScopeInputs.forEach((input) => {
+
+    input.addEventListener(
+        "change",
+        updateExportOptions
+    );
+
+});
+
+
+exportFormatButtons.forEach((button) => {
+
+    button.addEventListener("click", () => {
+
+        selectedExportFormat =
+            button.dataset.exportFormat;
+
+        exportFormatButtons.forEach((candidate) => {
+
+            candidate.classList.toggle(
+                "selected",
+                candidate === button
+            );
+
+        });
+
+    });
+
+});
+
+
+if (exportButton) {
+
+    exportButton.addEventListener("click", () => {
+
+        const scope =
+            document.querySelector(
+                'input[name="exportScope"]:checked'
+            )?.value || "all";
+
+        const formatName = {
+            csv: "CSV",
+            xlsx: "Excel XLSX",
+            pdf: "PDF"
+        }[selectedExportFormat];
+
+        alert(
+            `Export configuration ready.\n\n` +
+            `Scope: ${scope}\n` +
+            `Format: ${formatName}\n\n` +
+            `Actual file generation will be connected ` +
+            `to persistent inventory data.`
+        );
+
+    });
+
+}
+
+
+updateExportOptions();

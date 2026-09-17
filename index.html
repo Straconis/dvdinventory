@@ -56,6 +56,7 @@
         <button data-page="checkout">Check Out</button>
         <button data-page="checkin">Check In</button>
         <button data-page="totes">Totes</button>
+        <button data-page="export">Export</button>
     </nav>
 
 </header>
@@ -503,6 +504,299 @@
 
     </section>
 
+
+    <!-- EXPORT -->
+
+    <section
+        id="export"
+        class="page"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">REPORTING AND BACKUP</p>
+                <h1>Export</h1>
+                <p>
+                    Export exactly the inventory information you need.
+                </p>
+            </div>
+        </div>
+
+        <div class="export-layout">
+
+            <div class="workflow-card export-card">
+
+                <h2>What should be exported?</h2>
+
+                <div class="radio-list">
+
+                    <label class="choice-row">
+                        <input
+                            type="radio"
+                            name="exportScope"
+                            value="all"
+                            checked
+                        >
+                        <span>
+                            <strong>All Inventory</strong>
+                            <small>
+                                Every physical release in every tote.
+                            </small>
+                        </span>
+                    </label>
+
+                    <label class="choice-row">
+                        <input
+                            type="radio"
+                            name="exportScope"
+                            value="tote"
+                        >
+                        <span>
+                            <strong>Selected Tote</strong>
+                            <small>
+                                Inventory from one tote.
+                            </small>
+                        </span>
+                    </label>
+
+                    <label class="choice-row">
+                        <input
+                            type="radio"
+                            name="exportScope"
+                            value="totes"
+                        >
+                        <span>
+                            <strong>Selected Totes</strong>
+                            <small>
+                                Inventory from multiple totes.
+                            </small>
+                        </span>
+                    </label>
+
+                    <label class="choice-row">
+                        <input
+                            type="radio"
+                            name="exportScope"
+                            value="search"
+                        >
+                        <span>
+                            <strong>Current Search Results</strong>
+                            <small>
+                                Export the currently filtered results.
+                            </small>
+                        </span>
+                    </label>
+
+                    <label class="choice-row">
+                        <input
+                            type="radio"
+                            name="exportScope"
+                            value="checkout"
+                        >
+                        <span>
+                            <strong>Checked-Out DVDs</strong>
+                            <small>
+                                Everything currently checked out.
+                            </small>
+                        </span>
+                    </label>
+
+                    <label class="choice-row">
+                        <input
+                            type="radio"
+                            name="exportScope"
+                            value="history"
+                        >
+                        <span>
+                            <strong>Transaction History</strong>
+                            <small>
+                                Inventory movement and audit history.
+                            </small>
+                        </span>
+                    </label>
+
+                </div>
+
+                <div
+                    id="exportToteOptions"
+                    class="conditional-options hidden"
+                >
+
+                    <label for="exportTote">
+                        Tote Code
+                    </label>
+
+                    <input
+                        id="exportTote"
+                        type="text"
+                        placeholder="Scan, type, or select a tote"
+                        autocomplete="off"
+                    >
+
+                </div>
+
+                <div
+                    id="exportHistoryOptions"
+                    class="conditional-options hidden"
+                >
+
+                    <div class="date-grid">
+
+                        <div>
+                            <label for="exportStartDate">
+                                Start Date
+                            </label>
+
+                            <input
+                                id="exportStartDate"
+                                type="date"
+                            >
+                        </div>
+
+                        <div>
+                            <label for="exportEndDate">
+                                End Date
+                            </label>
+
+                            <input
+                                id="exportEndDate"
+                                type="date"
+                            >
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="workflow-card export-card">
+
+                <h2>Include Fields</h2>
+
+                <div class="checkbox-grid">
+
+                    <label class="check-row">
+                        <input type="checkbox" checked>
+                        <span>UPC</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox" checked>
+                        <span>Title</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox" checked>
+                        <span>Edition</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox" checked>
+                        <span>Format</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox" checked>
+                        <span>Year</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox" checked>
+                        <span>Tote</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox" checked>
+                        <span>Quantity</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox" checked>
+                        <span>Available Quantity</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox">
+                        <span>IMDb ID</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox">
+                        <span>Checkout Information</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox">
+                        <span>Notes</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input type="checkbox">
+                        <span>Metadata Source</span>
+                    </label>
+
+                </div>
+
+
+                <h2 class="export-format-heading">
+                    File Format
+                </h2>
+
+                <div class="format-grid">
+
+                    <button
+                        class="format-button selected"
+                        type="button"
+                        data-export-format="csv"
+                    >
+                        <strong>CSV</strong>
+                        <small>Universal data file</small>
+                    </button>
+
+                    <button
+                        class="format-button"
+                        type="button"
+                        data-export-format="xlsx"
+                    >
+                        <strong>Excel</strong>
+                        <small>.xlsx spreadsheet</small>
+                    </button>
+
+                    <button
+                        class="format-button"
+                        type="button"
+                        data-export-format="pdf"
+                    >
+                        <strong>PDF</strong>
+                        <small>Printable report</small>
+                    </button>
+
+                </div>
+
+                <div class="export-summary">
+                    <strong>Export is ready for data wiring.</strong>
+
+                    <span>
+                        The interface is active. File generation will be
+                        connected when persistent inventory storage is added.
+                    </span>
+                </div>
+
+                <button
+                    id="exportButton"
+                    class="primary-button export-button"
+                    type="button"
+                >
+                    Export Inventory
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
 </main>
 
 <footer class="app-footer">
@@ -515,3 +809,4 @@
 
 </body>
 </html>
+
