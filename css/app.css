@@ -987,3 +987,84 @@ button:disabled {
     }
 
 }
+/* ============================================================
+   DVD Inventory - persisted tote list
+   ============================================================ */
+
+.tote-status {
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid currentColor;
+    border-radius: 0.6rem;
+}
+
+.tote-status-success {
+    opacity: 0.95;
+}
+
+.tote-status-error {
+    font-weight: 600;
+}
+
+.tote-status-info {
+    opacity: 0.85;
+}
+
+.tote-list-card {
+    margin-top: 1.25rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border-color, rgba(127, 127, 127, 0.35));
+    border-radius: 0.8rem;
+}
+
+.tote-list-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.tote-list-heading h2 {
+    margin: 0;
+}
+
+.tote-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.tote-item {
+    padding: 1rem;
+    border: 1px solid var(--border-color, rgba(127, 127, 127, 0.35));
+    border-radius: 0.65rem;
+}
+
+.tote-item-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.tote-item-code {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.tote-item-description,
+.tote-item-location,
+.tote-empty-state {
+    margin: 0.4rem 0 0;
+}
+
+.tote-item-location,
+.tote-empty-state {
+    opacity: 0.75;
+}
+
+@media (max-width: 640px) {
+    .tote-list-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
