@@ -111,6 +111,56 @@
         }
     }
 
+    function createCodeReader() {
+        const zxing = window.ZXingBrowser;
+        const formats = targetFormat === "tote"
+            ? [zxing.BarcodeFormat.CODE_128]
+            : [
+                zxing.BarcodeFormat.UPC_A,
+                zxing.BarcodeFormat.UPC_E,
+                zxing.BarcodeFormat.EAN_13,
+                zxing.BarcodeFormat.EAN_8,
+                zxing.BarcodeFormat.CODE_128
+            ];
+
+        const reader =
+            new zxing.BrowserMultiFormatOneDReader(
+                undefined,
+                {
+                    delayBetweenScanAttempts: 40,
+                    delayBetweenScanSuccess: 500
+                }
+            );
+
+        reader.possibleFormats = formats;
+
+        return reader;
+    }
+
+    function getCameraConstraints(deviceId) {
+        const constraints = {
+            width: {
+                ideal: 1920
+            },
+            height: {
+                ideal: 1080
+            }
+        };
+
+        if (deviceId) {
+            constraints.deviceId = {
+                exact: deviceId
+            };
+        }
+        else {
+            constraints.facingMode = {
+                ideal: "environment"
+            };
+        }
+
+        return constraints;
+    }
+
     function getCameraErrorMessage(error) {
         const name = error && error.name ? error.name : "";
 
@@ -174,9 +224,13 @@
     async function startWithConstraints(constraints) {
         stopScanner();
         resultAccepted = false;
-        codeReader =
-            new window.ZXingBrowser.BrowserMultiFormatReader();
-        setStatus("Point the camera at the barcode.", "info");
+        codeReader = createCodeReader();
+        setStatus(
+            targetFormat === "tote"
+                ? "Point the camera at the tote barcode."
+                : "Fill the yellow box with the DVD barcode and hold it steady.",
+            "info"
+        );
 
         try {
             scannerControls = await codeReader.decodeFromConstraints(
@@ -222,17 +276,7 @@
 
         dialog.showModal();
 
-        await startWithConstraints({
-            facingMode: {
-                ideal: "environment"
-            },
-            width: {
-                ideal: 1280
-            },
-            height: {
-                ideal: 720
-            }
-        });
+        await startWithConstraints(getCameraConstraints());
     }
 
     document
@@ -269,11 +313,9 @@
         const deviceId = cameraSelect.value;
 
         if (deviceId) {
-            await startWithConstraints({
-                deviceId: {
-                    exact: deviceId
-                }
-            });
+            await startWithConstraints(
+                getCameraConstraints(deviceId)
+            );
         }
     });
 
