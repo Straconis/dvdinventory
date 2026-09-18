@@ -1624,6 +1624,17 @@ button:disabled {
     opacity: 0.75;
 }
 
+.tote-item-archived {
+    border-style: dashed;
+    opacity: 0.82;
+}
+
+.tote-archived-date {
+    margin: 0.4rem 0 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
 .tote-actions {
     display: flex;
     flex-wrap: wrap;

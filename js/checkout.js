@@ -79,6 +79,7 @@
                 .from("totes")
                 .select("id")
                 .eq("tote_code", toteCode)
+                .is("archived_at", null)
                 .maybeSingle(),
             supabase
                 .from("physical_releases")

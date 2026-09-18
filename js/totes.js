@@ -37,9 +37,16 @@
     const toteList =
         document.getElementById("toteList");
 
+    const archivedTotePanel =
+        document.getElementById("archivedTotePanel");
+
+    const archivedToteList =
+        document.getElementById("archivedToteList");
+
     let loadingTotes = false;
     let creatingTote = false;
     const deletingToteIds = new Set();
+    const archivingToteIds = new Set();
 
     function normalizeOptionalText(value) {
         const normalized = String(value || "").trim();
@@ -462,6 +469,75 @@
         }
     }
 
+    async function setToteArchived(tote, archived, button) {
+        if (archivingToteIds.has(tote.id)) {
+            return;
+        }
+
+        if (archived) {
+            const confirmed = window.confirm(
+                `Archive ${tote.tote_code}?\n\n` +
+                "It will be removed from active tote choices, but its " +
+                "inventory and transaction history will be preserved. " +
+                "The tote must not contain any DVDs."
+            );
+
+            if (!confirmed) {
+                return;
+            }
+        }
+
+        archivingToteIds.add(tote.id);
+        button.disabled = true;
+        button.textContent = archived ? "Archiving..." : "Restoring...";
+
+        try {
+            setStatus(
+                `${archived ? "Archiving" : "Restoring"} ` +
+                    `${tote.tote_code}...`,
+                "info"
+            );
+
+            const { error } = await supabase.rpc(
+                "set_tote_archived",
+                {
+                    p_tote_id: tote.id,
+                    p_archived: archived
+                }
+            );
+
+            if (error) {
+                throw error;
+            }
+
+            setStatus(
+                `${tote.tote_code} was ` +
+                    `${archived ? "archived" : "restored"}.`,
+                "success"
+            );
+            await loadTotes({
+                silent: true
+            });
+            window.dispatchEvent(
+                new CustomEvent("dvd-totes-changed")
+            );
+        }
+        catch (error) {
+            console.error("Failed to update tote archive status:", error);
+            setStatus(
+                error && error.message
+                    ? error.message
+                    : `Could not ${archived ? "archive" : "restore"} the tote.`,
+                "error"
+            );
+        }
+        finally {
+            archivingToteIds.delete(tote.id);
+            button.disabled = false;
+            button.textContent = archived ? "Archive Tote" : "Restore Tote";
+        }
+    }
+
     function renderToteCard(tote) {
         const card = document.createElement("article");
         const heading = document.createElement("div");
@@ -533,6 +609,17 @@
             })
         );
 
+        let archiveButton;
+
+        archiveButton = createActionButton(
+            "Archive Tote",
+            "",
+            () => {
+                setToteArchived(tote, true, archiveButton);
+            }
+        );
+        actions.appendChild(archiveButton);
+
         let deleteButton;
 
         deleteButton = createActionButton(
@@ -549,27 +636,103 @@
         return card;
     }
 
+    function renderArchivedToteCard(tote) {
+        const card = document.createElement("article");
+        const archivedDate = tote.archived_at
+            ? new Date(tote.archived_at).toLocaleDateString()
+            : "Unknown date";
+
+        card.className = "tote-item tote-item-archived";
+        card.appendChild(
+            createTextElement(
+                "strong",
+                "tote-item-code",
+                tote.tote_code
+            )
+        );
+
+        if (tote.description) {
+            card.appendChild(
+                createTextElement(
+                    "p",
+                    "tote-item-description",
+                    tote.description
+                )
+            );
+        }
+
+        card.appendChild(
+            createTextElement(
+                "p",
+                "tote-item-location",
+                tote.physical_location
+                    ? `Location: ${tote.physical_location}`
+                    : "Location: Not specified"
+            )
+        );
+        card.appendChild(
+            createTextElement(
+                "p",
+                "tote-archived-date",
+                `Archived ${archivedDate}`
+            )
+        );
+
+        const actions = document.createElement("div");
+        let restoreButton;
+
+        actions.className = "tote-actions";
+        restoreButton = createActionButton(
+            "Restore Tote",
+            "",
+            () => {
+                setToteArchived(tote, false, restoreButton);
+            }
+        );
+        actions.appendChild(restoreButton);
+        card.appendChild(actions);
+
+        return card;
+    }
+
     function renderTotes(totes) {
         if (!toteList) {
             return;
         }
 
-        toteList.replaceChildren();
+        const activeTotes = (totes || []).filter(
+            (tote) => !tote.archived_at
+        );
+        const archivedTotes = (totes || []).filter(
+            (tote) => Boolean(tote.archived_at)
+        );
 
-        if (!Array.isArray(totes) || totes.length === 0) {
+        toteList.replaceChildren();
+        archivedToteList.replaceChildren();
+        archivedTotePanel.classList.toggle(
+            "hidden",
+            archivedTotes.length === 0
+        );
+
+        if (activeTotes.length === 0) {
             toteList.appendChild(
                 createTextElement(
                     "p",
                     "tote-empty-state",
-                    "No totes have been created yet."
+                    archivedTotes.length > 0
+                        ? "No active totes. Restore an archived tote or create a new one."
+                        : "No totes have been created yet."
                 )
             );
-
-            return;
+        }
+        else for (const tote of activeTotes) {
+            toteList.appendChild(renderToteCard(tote));
         }
 
-        for (const tote of totes) {
-            toteList.appendChild(renderToteCard(tote));
+        for (const tote of archivedTotes) {
+            archivedToteList.appendChild(
+                renderArchivedToteCard(tote)
+            );
         }
     }
 
@@ -629,7 +792,7 @@
             } = await supabase
                 .from("totes")
                 .select(
-                    "id, tote_code, description, physical_location, created_at, updated_at"
+                    "id, tote_code, description, physical_location, archived_at, archived_by, created_at, updated_at"
                 )
                 .order("tote_code", {
                     ascending: true
@@ -751,7 +914,7 @@
                     physical_location: physicalLocation
                 })
                 .select(
-                    "id, tote_code, description, physical_location, created_at, updated_at"
+                    "id, tote_code, description, physical_location, archived_at, archived_by, created_at, updated_at"
                 )
                 .single();
 
@@ -809,7 +972,7 @@
                 message.includes("unique")
             ) {
                 setStatus(
-                    `${toteCode} already exists.`,
+                    `${toteCode} already exists. Restore it if it is archived.`,
                     "error"
                 );
             }

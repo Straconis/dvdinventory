@@ -640,6 +640,7 @@
         const { data, error } = await supabase
             .from("totes")
             .select("tote_code")
+            .is("archived_at", null)
             .order("tote_code", {
                 ascending: true
             });
@@ -680,6 +681,7 @@
     }
 
     window.addEventListener("dvd-auth-ready", initializeAuthenticated);
+    window.addEventListener("dvd-totes-changed", loadToteChoices);
 
     if (
         window.DVD_AUTH &&
