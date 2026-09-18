@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="./css/app.css?v=20260918-12"
+        href="./css/app.css?v=20260918-13"
     >
 </head>
 
@@ -1244,9 +1244,16 @@
                     <input
                         id="exportTote"
                         type="text"
-                        placeholder="Scan, type, or select a tote"
+                        list="exportToteList"
+                        placeholder="TOTE-00001, TOTE-00002"
                         autocomplete="off"
                     >
+
+                    <datalist id="exportToteList"></datalist>
+
+                    <p class="helper-text">
+                        For multiple totes, separate tote codes with commas.
+                    </p>
 
                 </div>
 
@@ -1293,63 +1300,123 @@
                 <div class="checkbox-grid">
 
                     <label class="check-row">
-                        <input type="checkbox" checked>
+                        <input
+                            type="checkbox"
+                            data-export-field="upc"
+                            checked
+                        >
                         <span>UPC</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox" checked>
+                        <input
+                            type="checkbox"
+                            data-export-field="title"
+                            checked
+                        >
                         <span>Title</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox" checked>
+                        <input
+                            type="checkbox"
+                            data-export-field="edition"
+                            checked
+                        >
                         <span>Edition</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox" checked>
+                        <input
+                            type="checkbox"
+                            data-export-field="format"
+                            checked
+                        >
                         <span>Format</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox" checked>
+                        <input
+                            type="checkbox"
+                            data-export-field="year"
+                            checked
+                        >
                         <span>Year</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox" checked>
+                        <input
+                            type="checkbox"
+                            data-export-field="tote"
+                            checked
+                        >
                         <span>Tote</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox" checked>
+                        <input
+                            type="checkbox"
+                            data-export-field="quantity"
+                            checked
+                        >
                         <span>Quantity</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox" checked>
+                        <input
+                            type="checkbox"
+                            data-export-field="available_quantity"
+                            checked
+                        >
                         <span>Available Quantity</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox">
+                        <input
+                            type="checkbox"
+                            data-export-field="imdb_id"
+                        >
                         <span>IMDb ID</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox">
+                        <input
+                            type="checkbox"
+                            data-export-field="checkout_information"
+                        >
                         <span>Checkout Information</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox">
+                        <input
+                            type="checkbox"
+                            data-export-field="notes"
+                        >
                         <span>Notes</span>
                     </label>
 
                     <label class="check-row">
-                        <input type="checkbox">
-                        <span>Metadata Source</span>
+                        <input
+                            type="checkbox"
+                            data-export-field="metadata_status"
+                        >
+                        <span>Metadata Status</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input
+                            type="checkbox"
+                            data-export-field="transaction_date"
+                        >
+                        <span>Transaction / Checkout Date</span>
+                    </label>
+
+                    <label class="check-row">
+                        <input
+                            type="checkbox"
+                            data-export-field="transaction_type"
+                        >
+                        <span>Transaction Type</span>
                     </label>
 
                 </div>
@@ -1391,13 +1458,21 @@
                 </div>
 
                 <div class="export-summary">
-                    <strong>Export is ready for data wiring.</strong>
+                    <strong id="exportSummaryTitle">
+                        Ready to export live inventory.
+                    </strong>
 
-                    <span>
-                        The interface is active. File generation will be
-                        connected when persistent inventory storage is added.
+                    <span id="exportSummaryText">
+                        Choose a scope, fields, and file format.
                     </span>
                 </div>
+
+                <div
+                    id="exportStatus"
+                    class="workflow-status hidden"
+                    role="status"
+                    aria-live="polite"
+                ></div>
 
                 <button
                     id="exportButton"
@@ -1611,13 +1686,15 @@
 <script src="./js/checkout.js?v=20260918-12"></script>
 <script src="./js/users.js?v=20260918-7"></script>
 <script src="./js/inventory.js?v=20260918-12"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="./js/export.js?v=20260918-13"></script>
 <script
     src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js"
     integrity="sha384-HRtzk9lZgkbSgvUyQrnfC/GxiXZgwaNyD7hC9wcXlsBpDhkS80ISl73juef2FRuf"
     crossorigin="anonymous"
 ></script>
 <script src="./js/scanner.js?v=20260918-8"></script>
-<script src="./js/app.js?v=20260918-12"></script>
+<script src="./js/app.js?v=20260918-13"></script>
 
 </body>
 </html>
