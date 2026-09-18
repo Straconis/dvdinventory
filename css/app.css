@@ -432,6 +432,10 @@ input:focus {
     gap: 8px;
 }
 
+.scan-row-three {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
 .camera-button,
 .primary-button {
     min-height: 48px;
@@ -535,6 +539,123 @@ input:focus {
 
 
 /* ---------------------------------------------------------
+   Camera barcode scanner
+--------------------------------------------------------- */
+
+.scanner-dialog {
+    width: min(720px, calc(100% - 32px));
+    max-width: none;
+    padding: 20px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--background-secondary);
+    color: var(--text);
+}
+
+.scanner-dialog::backdrop {
+    background: rgba(2, 6, 23, 0.82);
+}
+
+.scanner-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+
+    margin-bottom: 16px;
+}
+
+.scanner-heading h2 {
+    margin: 2px 0 0;
+    font-size: 1.35rem;
+}
+
+.scanner-close-button {
+    display: grid;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--panel-hover);
+    color: var(--text);
+
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.scanner-preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: #000;
+}
+
+.scanner-preview video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.scanner-guide {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    width: min(82%, 560px);
+    height: 42%;
+
+    border: 3px solid rgba(250, 204, 21, 0.9);
+    border-radius: 8px;
+
+    box-shadow: 0 0 0 999px rgba(2, 6, 23, 0.28);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.scanner-status {
+    min-height: 1.5em;
+    margin: 14px 0 0;
+
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.scanner-status-error {
+    color: #fecaca;
+}
+
+.scanner-camera-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+
+    margin-top: 14px;
+}
+
+.scanner-camera-row label {
+    margin: 0;
+}
+
+.scanner-camera-row select {
+    width: 100%;
+}
+
+
+/* ---------------------------------------------------------
    Tablet
 --------------------------------------------------------- */
 
@@ -620,8 +741,31 @@ input:focus {
         grid-template-columns: 1fr;
     }
 
+    .scan-row-three {
+        grid-template-columns: 1fr;
+    }
+
     .camera-button {
         width: 100%;
+    }
+
+    .scanner-dialog {
+        width: calc(100% - 20px);
+        padding: 14px;
+    }
+
+    .scanner-preview {
+        aspect-ratio: 3 / 4;
+    }
+
+    .scanner-guide {
+        width: 88%;
+        height: 28%;
+    }
+
+    .scanner-camera-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
     }
 
 }

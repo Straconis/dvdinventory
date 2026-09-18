@@ -91,31 +91,6 @@ menuButton.addEventListener("click", () => {
 });
 
 
-document
-    .querySelectorAll("[data-camera-target]")
-    .forEach((button) => {
-
-        button.addEventListener("click", () => {
-
-            const targetId =
-                button.dataset.cameraTarget;
-
-            const input =
-                document.getElementById(targetId);
-
-            if (input) {
-                input.focus();
-            }
-
-            alert(
-                "Camera barcode scanning is coming next."
-            );
-
-        });
-
-    });
-
-
 const initialPage =
     window.location.hash.substring(1) ||
     "dashboard";
