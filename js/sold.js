@@ -312,8 +312,8 @@
 
         const optionalNotes = String(notesInput.value || "").trim();
         const transactionNotes = optionalNotes
-            ? `Sold. ${optionalNotes}`
-            : "Sold.";
+            ? `Sold from ${tote.tote_code}. ${optionalNotes}`
+            : `Sold from ${tote.tote_code}.`;
 
         try {
             const { error } = await supabase.rpc(

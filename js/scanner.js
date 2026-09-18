@@ -6,17 +6,28 @@
     const title = document.getElementById("scannerTitle");
     const status = document.getElementById("scannerStatus");
     const closeButton = document.getElementById("closeScannerButton");
+    const preview = video.closest(".scanner-preview");
+    const guide = document.querySelector(".scanner-guide");
     const cameraRow = document.getElementById("scannerCameraRow");
     const cameraSelect = document.getElementById("scannerCameraSelect");
+    const captureCanvas = document.createElement("canvas");
+    const captureContext = captureCanvas.getContext("2d", {
+        willReadFrequently: true
+    });
+    const scanRegion = Object.freeze({
+        x: 0.08,
+        y: 0.35,
+        width: 0.84,
+        height: 0.30
+    });
 
     let codeReader = null;
-    let scannerControls = null;
     let targetInput = null;
     let targetFormat = "barcode";
     let stopping = false;
     let resultAccepted = false;
     let nativeDetector = null;
-    let nativeScanTimer = null;
+    let scanTimer = null;
 
     function setStatus(message, type) {
         status.textContent = message;
@@ -35,17 +46,12 @@
 
         stopping = true;
 
-        if (nativeScanTimer) {
-            window.clearTimeout(nativeScanTimer);
-            nativeScanTimer = null;
+        if (scanTimer) {
+            window.clearTimeout(scanTimer);
+            scanTimer = null;
         }
 
         nativeDetector = null;
-
-        if (scannerControls) {
-            scannerControls.stop();
-            scannerControls = null;
-        }
 
         if (video.srcObject) {
             for (const track of video.srcObject.getTracks()) {
@@ -120,12 +126,6 @@
         targetInput.focus();
     }
 
-    function handleDecode(result) {
-        if (result) {
-            acceptResult(result);
-        }
-    }
-
     function createCodeReader() {
         const zxing = window.ZXingBrowser;
 
@@ -188,47 +188,6 @@
         }
     }
 
-    async function scanWithNativeDetector() {
-        if (
-            !nativeDetector ||
-            resultAccepted ||
-            !dialog.open
-        ) {
-            return;
-        }
-
-        const detector = nativeDetector;
-
-        try {
-            const barcodes = await detector.detect(video);
-
-            if (nativeDetector !== detector || !dialog.open) {
-                return;
-            }
-
-            if (barcodes.length > 0 && barcodes[0].rawValue) {
-                acceptResult({
-                    getText() {
-                        return barcodes[0].rawValue;
-                    }
-                });
-            }
-        }
-        catch (error) {
-            console.debug(
-                "Native barcode scan attempt failed:",
-                error
-            );
-        }
-
-        if (!resultAccepted && nativeDetector && dialog.open) {
-            nativeScanTimer = window.setTimeout(
-                scanWithNativeDetector,
-                120
-            );
-        }
-    }
-
     async function startNativeDetector() {
         if (
             targetFormat !== "upc" ||
@@ -262,12 +221,149 @@
             nativeDetector = new window.BarcodeDetector({
                 formats
             });
-            scanWithNativeDetector();
         }
         catch (error) {
             console.debug(
                 "Native barcode detection is unavailable:",
                 error
+            );
+        }
+    }
+
+    function updateScanGuide() {
+        if (
+            !preview ||
+            !guide ||
+            !video.videoWidth ||
+            !video.videoHeight
+        ) {
+            return;
+        }
+
+        const previewWidth = preview.clientWidth;
+        const previewHeight = preview.clientHeight;
+        const scale = Math.min(
+            previewWidth / video.videoWidth,
+            previewHeight / video.videoHeight
+        );
+        const renderedWidth = video.videoWidth * scale;
+        const renderedHeight = video.videoHeight * scale;
+        const renderedLeft =
+            (previewWidth - renderedWidth) / 2;
+        const renderedTop =
+            (previewHeight - renderedHeight) / 2;
+
+        guide.style.left =
+            `${renderedLeft + (renderedWidth * scanRegion.x)}px`;
+        guide.style.top =
+            `${renderedTop + (renderedHeight * scanRegion.y)}px`;
+        guide.style.width =
+            `${renderedWidth * scanRegion.width}px`;
+        guide.style.height =
+            `${renderedHeight * scanRegion.height}px`;
+    }
+
+    function drawScanRegion() {
+        if (
+            video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+            !video.videoWidth ||
+            !video.videoHeight
+        ) {
+            return false;
+        }
+
+        const sourceX = Math.round(
+            video.videoWidth * scanRegion.x
+        );
+        const sourceY = Math.round(
+            video.videoHeight * scanRegion.y
+        );
+        const sourceWidth = Math.round(
+            video.videoWidth * scanRegion.width
+        );
+        const sourceHeight = Math.round(
+            video.videoHeight * scanRegion.height
+        );
+        const outputWidth = Math.min(sourceWidth, 1600);
+        const outputHeight = Math.max(
+            1,
+            Math.round(
+                sourceHeight * (outputWidth / sourceWidth)
+            )
+        );
+
+        if (
+            captureCanvas.width !== outputWidth ||
+            captureCanvas.height !== outputHeight
+        ) {
+            captureCanvas.width = outputWidth;
+            captureCanvas.height = outputHeight;
+        }
+
+        captureContext.drawImage(
+            video,
+            sourceX,
+            sourceY,
+            sourceWidth,
+            sourceHeight,
+            0,
+            0,
+            outputWidth,
+            outputHeight
+        );
+
+        return true;
+    }
+
+    async function scanActiveRegion() {
+        if (
+            resultAccepted ||
+            !dialog.open ||
+            !codeReader
+        ) {
+            return;
+        }
+
+        if (drawScanRegion()) {
+            try {
+                acceptResult(
+                    codeReader.decodeFromCanvas(captureCanvas)
+                );
+            }
+            catch (error) {
+                // A missed frame is expected while the user aligns a barcode.
+            }
+
+            if (!resultAccepted && nativeDetector) {
+                const detector = nativeDetector;
+
+                try {
+                    const barcodes =
+                        await detector.detect(captureCanvas);
+
+                    if (
+                        nativeDetector === detector &&
+                        dialog.open &&
+                        barcodes.length > 0 &&
+                        barcodes[0].rawValue
+                    ) {
+                        acceptResult({
+                            getText() {
+                                return barcodes[0].rawValue;
+                            }
+                        });
+                    }
+                }
+                catch (error) {
+                    // Native detection may also miss frames during alignment.
+                }
+            }
+        }
+
+        if (!resultAccepted && dialog.open && codeReader) {
+            scanTimer = window.setTimeout(
+                scanActiveRegion,
+                80
             );
         }
     }
@@ -368,18 +464,20 @@
         );
 
         try {
-            scannerControls = await codeReader.decodeFromConstraints(
-                {
+            const stream =
+                await navigator.mediaDevices.getUserMedia({
                     audio: false,
                     video: constraints
-                },
-                video,
-                handleDecode
-            );
+                });
+
+            video.srcObject = stream;
+            await video.play();
 
             await optimizeCameraFocus();
             await startNativeDetector();
             await updateCameraChoices();
+            updateScanGuide();
+            scanActiveRegion();
         }
         catch (error) {
             console.error("Camera scanner failed to start:", error);
@@ -459,4 +557,7 @@
     window.addEventListener("pagehide", () => {
         stopScanner();
     });
+
+    window.addEventListener("resize", updateScanGuide);
+    video.addEventListener("loadedmetadata", updateScanGuide);
 })();

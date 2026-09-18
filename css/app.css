@@ -495,6 +495,10 @@ input:focus {
     line-height: 1.5;
 }
 
+.sold-tote-helper {
+    margin-top: 8px;
+}
+
 .empty-state {
     padding: 70px 30px;
 
@@ -606,23 +610,35 @@ input:focus {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 .scanner-guide {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 35%;
+    left: 8%;
 
-    width: min(82%, 560px);
-    height: 42%;
+    width: 84%;
+    height: 30%;
 
     border: 3px solid rgba(250, 204, 21, 0.9);
     border-radius: 8px;
 
     box-shadow: 0 0 0 999px rgba(2, 6, 23, 0.28);
-    transform: translate(-50%, -50%);
     pointer-events: none;
+}
+
+.scanner-line {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    left: 8px;
+
+    height: 2px;
+
+    background: #ef4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.95);
+    transform: translateY(-50%);
 }
 
 .scanner-status {
@@ -759,6 +775,8 @@ input:focus {
     }
 
     .scanner-guide {
+        top: 36%;
+        left: 6%;
         width: 88%;
         height: 28%;
     }

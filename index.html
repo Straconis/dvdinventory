@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="./css/app.css"
+        href="./css/app.css?v=20260918-6"
     >
 </head>
 
@@ -434,8 +434,11 @@
             >
                 <div id="soldReleaseSummary"></div>
 
-                <label for="soldTote">Remove From Tote</label>
+                <label for="soldTote">Tote of Origin</label>
                 <select id="soldTote" required></select>
+                <p class="helper-text sold-tote-helper">
+                    Choose the tote this sold copy will be removed from.
+                </p>
 
                 <label for="soldQuantity">Quantity Sold</label>
                 <input
@@ -1366,7 +1369,9 @@
             muted
             playsinline
         ></video>
-        <div class="scanner-guide" aria-hidden="true"></div>
+        <div class="scanner-guide" aria-hidden="true">
+            <span class="scanner-line"></span>
+        </div>
     </div>
 
     <p
@@ -1396,15 +1401,15 @@
 <script src="./js/auth.js"></script>
 <script src="./js/barcode.js"></script>
 <script src="./js/totes.js"></script>
-<script src="./js/sold.js"></script>
+<script src="./js/sold.js?v=20260918-6"></script>
 <script src="./js/users.js"></script>
 <script
     src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js"
     integrity="sha384-HRtzk9lZgkbSgvUyQrnfC/GxiXZgwaNyD7hC9wcXlsBpDhkS80ISl73juef2FRuf"
     crossorigin="anonymous"
 ></script>
-<script src="./js/scanner.js?v=20260918-5"></script>
-<script src="./js/app.js?v=20260918-5"></script>
+<script src="./js/scanner.js?v=20260918-6"></script>
+<script src="./js/app.js?v=20260918-6"></script>
 
 </body>
 </html>
