@@ -734,7 +734,7 @@
             </div>
         </div>
 
-        <div class="workflow-card">
+        <form id="addDvdForm" class="workflow-card">
 
             <label for="addToteCode">
                 Tote
@@ -747,6 +747,7 @@
                     type="text"
                     placeholder="Scan or enter tote code"
                     autocomplete="off"
+                    required
                 >
 
                 <button
@@ -772,6 +773,7 @@
                     inputmode="numeric"
                     placeholder="Scan or enter UPC"
                     autocomplete="off"
+                    required
                 >
 
                 <button
@@ -790,7 +792,20 @@
                 these fields, or use Camera to scan with this device.
             </p>
 
-        </div>
+            <button
+                id="addDvdButton"
+                class="primary-button"
+                type="submit"
+            >Add DVD</button>
+
+            <p
+                id="addDvdStatus"
+                class="workflow-status hidden"
+                role="status"
+                aria-live="polite"
+            ></p>
+
+        </form>
 
     </section>
 
@@ -1401,6 +1416,7 @@
 <script src="./js/auth.js"></script>
 <script src="./js/barcode.js"></script>
 <script src="./js/totes.js"></script>
+<script src="./js/add-dvd.js?v=20260918-9"></script>
 <script src="./js/sold.js?v=20260918-6"></script>
 <script src="./js/users.js?v=20260918-7"></script>
 <script
