@@ -1705,6 +1705,26 @@ button:disabled {
     line-height: 1.4;
 }
 
+.tote-release-edit {
+    min-height: 34px;
+    margin-top: 0.65rem;
+    padding: 0.4rem 0.65rem;
+}
+
+.release-editor-dialog {
+    width: min(620px, calc(100% - 2rem));
+}
+
+.release-editor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1rem;
+}
+
+.release-editor-dialog textarea {
+    width: 100%;
+}
+
 .tote-contents-empty,
 .tote-contents-error {
     margin: 0;
@@ -1730,5 +1750,9 @@ button:disabled {
     .tote-contents-table td {
         padding-right: 0.4rem;
         padding-left: 0.4rem;
+    }
+
+    .release-editor-grid {
+        grid-template-columns: 1fr;
     }
 }

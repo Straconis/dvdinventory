@@ -171,8 +171,8 @@
             const release = inventoryRow.physical_releases || {};
             const relatedTitle = getRelatedTitle(release);
             const displayTitle =
-                (relatedTitle && relatedTitle.title) ||
                 release.release_title ||
+                (relatedTitle && relatedTitle.title) ||
                 (release.upc ? `UPC ${release.upc}` : "Unknown DVD");
             const details = [];
 
@@ -229,6 +229,39 @@
                 );
             }
 
+            if (
+                window.DVD_RELEASE_EDITOR &&
+                typeof window.DVD_RELEASE_EDITOR.open === "function"
+            ) {
+                titleCell.appendChild(
+                    createActionButton(
+                        "Edit DVD Info",
+                        "tote-release-edit",
+                        () => {
+                            window.DVD_RELEASE_EDITOR.open(
+                                release,
+                                (updatedRelease) => {
+                                    inventoryRow.physical_releases =
+                                        Object.assign(
+                                            {},
+                                            release,
+                                            updatedRelease
+                                        );
+                                    renderToteContents(
+                                        panel,
+                                        inventoryRows
+                                    );
+                                    setStatus(
+                                        `Updated DVD info for UPC ${updatedRelease.upc}.`,
+                                        "success"
+                                    );
+                                }
+                            );
+                        }
+                    )
+                );
+            }
+
             row.append(titleCell, quantityCell);
             tableBody.appendChild(row);
         }
@@ -277,6 +310,9 @@
                         edition,
                         format,
                         release_year,
+                        studio,
+                        notes,
+                        metadata_status,
                         titles (
                             title,
                             year

@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="./css/app.css?v=20260918-8"
+        href="./css/app.css?v=20260918-10"
     >
 </head>
 
@@ -1402,6 +1402,93 @@
     </div>
 </dialog>
 
+<dialog
+    id="releaseEditorDialog"
+    class="password-dialog release-editor-dialog"
+>
+    <form id="releaseEditorForm" method="dialog">
+        <h2>Edit DVD Info</h2>
+        <p id="releaseEditorUpc"></p>
+
+        <label for="releaseEditorTitle">Title</label>
+        <input
+            id="releaseEditorTitle"
+            type="text"
+            autocomplete="off"
+            required
+        >
+
+        <div class="release-editor-grid">
+            <div>
+                <label for="releaseEditorEdition">Edition</label>
+                <input
+                    id="releaseEditorEdition"
+                    type="text"
+                    placeholder="Widescreen, Collector's Edition..."
+                    autocomplete="off"
+                >
+            </div>
+
+            <div>
+                <label for="releaseEditorFormat">Format</label>
+                <input
+                    id="releaseEditorFormat"
+                    type="text"
+                    placeholder="DVD"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div>
+                <label for="releaseEditorYear">Release Year</label>
+                <input
+                    id="releaseEditorYear"
+                    type="number"
+                    min="1888"
+                    max="2100"
+                    inputmode="numeric"
+                >
+            </div>
+
+            <div>
+                <label for="releaseEditorStudio">Studio</label>
+                <input
+                    id="releaseEditorStudio"
+                    type="text"
+                    autocomplete="off"
+                >
+            </div>
+        </div>
+
+        <label for="releaseEditorNotes">Notes</label>
+        <textarea
+            id="releaseEditorNotes"
+            rows="3"
+        ></textarea>
+
+        <div
+            id="releaseEditorStatus"
+            class="workflow-status hidden"
+            role="status"
+            aria-live="polite"
+        ></div>
+
+        <div class="dialog-actions">
+            <button
+                id="cancelReleaseEditorButton"
+                class="secondary-button"
+                type="button"
+            >Cancel</button>
+
+            <button
+                id="saveReleaseEditorButton"
+                class="primary-button"
+                type="submit"
+            >Save DVD Info</button>
+        </div>
+    </form>
+</dialog>
+
 <footer class="app-footer">
     DVD Inventory
     <span>&bull;</span>
@@ -1415,7 +1502,8 @@
 <script src="./js/supabase-client.js"></script>
 <script src="./js/auth.js"></script>
 <script src="./js/barcode.js"></script>
-<script src="./js/totes.js"></script>
+<script src="./js/release-editor.js?v=20260918-10"></script>
+<script src="./js/totes.js?v=20260918-10"></script>
 <script src="./js/add-dvd.js?v=20260918-9"></script>
 <script src="./js/sold.js?v=20260918-6"></script>
 <script src="./js/users.js?v=20260918-7"></script>
