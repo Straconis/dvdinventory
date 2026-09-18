@@ -202,14 +202,20 @@
         class="main-navigation"
         aria-label="Main navigation"
     >
-        <button data-page="dashboard">Dashboard</button>
-        <button data-page="inventory">Inventory</button>
-        <button data-page="add">Add DVDs</button>
-        <button data-page="search">Search</button>
-        <button data-page="checkout">Check Out</button>
-        <button data-page="checkin">Check In</button>
-        <button data-page="totes">Totes</button>
-        <button data-page="export">Export</button>
+        <button type="button" data-page="dashboard">Dashboard</button>
+        <button type="button" data-page="inventory">Inventory</button>
+        <button type="button" data-page="add">Add DVDs</button>
+        <button type="button" data-page="search">Search</button>
+        <button type="button" data-page="checkout">Check Out</button>
+        <button type="button" data-page="checkin">Check In</button>
+        <button type="button" data-page="totes">Totes</button>
+        <button type="button" data-page="export">Export</button>
+        <button
+            id="usersNavigationButton"
+            class="admin-only hidden"
+            data-page="users"
+            type="button"
+        >Users</button>
     </nav>
 
     <div
@@ -243,7 +249,7 @@
 
         <div class="page-heading">
             <div>
-                <p class="eyebrow">DVD COLLECTION MANAGEMENT</p>
+                <p class="eyebrow">DVD INVENTORY MANAGEMENT</p>
                 <h1>Dashboard</h1>
                 <p>
                     Scan, locate, check out, and manage DVDs
@@ -287,6 +293,7 @@
             <button
                 class="action-card"
                 data-page="add"
+                type="button"
             >
                 <span class="action-icon">＋</span>
 
@@ -301,6 +308,7 @@
             <button
                 class="action-card"
                 data-page="search"
+                type="button"
             >
                 <span class="action-icon">⌕</span>
 
@@ -315,6 +323,7 @@
             <button
                 class="action-card"
                 data-page="checkout"
+                type="button"
             >
                 <span class="action-icon">→</span>
 
@@ -329,6 +338,7 @@
             <button
                 class="action-card"
                 data-page="checkin"
+                type="button"
             >
                 <span class="action-icon">←</span>
 
@@ -340,7 +350,111 @@
                 </span>
             </button>
 
+            <button
+                class="action-card action-card-danger"
+                data-page="sold"
+                type="button"
+            >
+                <span class="action-icon">−</span>
+
+                <span>
+                    <strong>Sold / Remove DVD</strong>
+                    <small>
+                        Permanently remove a sold copy and preserve its history.
+                    </small>
+                </span>
+            </button>
+
         </div>
+
+    </section>
+
+
+    <!-- SOLD / REMOVE DVD -->
+
+    <section
+        id="sold"
+        class="page"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">OUTGOING COLLECTION</p>
+                <h1>Sold / Remove DVD</h1>
+                <p>
+                    Remove a sold copy from available inventory while
+                    preserving the transaction history.
+                </p>
+            </div>
+        </div>
+
+        <form
+            id="soldLookupForm"
+            class="workflow-card"
+        >
+            <label for="soldUpc">DVD UPC</label>
+
+            <div class="scan-row">
+                <input
+                    id="soldUpc"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    placeholder="Scan or enter UPC"
+                    required
+                >
+
+                <button
+                    id="soldLookupButton"
+                    class="camera-button"
+                    type="submit"
+                >
+                    Find DVD
+                </button>
+            </div>
+
+            <div
+                id="soldStatus"
+                class="workflow-status hidden"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+            <div
+                id="soldDetails"
+                class="sold-details hidden"
+            >
+                <div id="soldReleaseSummary"></div>
+
+                <label for="soldTote">Remove From Tote</label>
+                <select id="soldTote" required></select>
+
+                <label for="soldQuantity">Quantity Sold</label>
+                <input
+                    id="soldQuantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value="1"
+                    required
+                >
+
+                <label for="soldNotes">Sale Notes</label>
+                <textarea
+                    id="soldNotes"
+                    rows="3"
+                    placeholder="Optional buyer, order number, marketplace, or other notes"
+                ></textarea>
+
+                <button
+                    id="soldSubmitButton"
+                    class="danger-button"
+                    type="button"
+                >
+                    Record Sold DVD
+                </button>
+            </div>
+        </form>
 
     </section>
 
@@ -372,10 +486,167 @@
             <button
                 class="primary-button"
                 data-page="add"
+                type="button"
             >
                 Add DVDs
             </button>
         </div>
+
+    </section>
+
+
+    <!-- USER MANAGEMENT -->
+
+    <section
+        id="users"
+        class="page admin-only hidden"
+    >
+
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">ADMINISTRATION</p>
+                <h1>User Management</h1>
+                <p>
+                    Create accounts, manage access, and review
+                    administrative history.
+                </p>
+            </div>
+        </div>
+
+        <div
+            id="userManagementStatus"
+            class="workflow-status hidden"
+            role="status"
+            aria-live="polite"
+        ></div>
+
+        <div class="user-management-layout">
+            <form
+                id="createUserForm"
+                class="workflow-card user-create-card"
+                autocomplete="off"
+            >
+                <h2>Create User</h2>
+
+                <label for="newUserUsername">Username</label>
+                <input
+                    id="newUserUsername"
+                    type="text"
+                    maxlength="32"
+                    pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}"
+                    required
+                >
+
+                <label for="newUserDisplayName">Display Name</label>
+                <input
+                    id="newUserDisplayName"
+                    type="text"
+                    maxlength="80"
+                    required
+                >
+
+                <label for="newUserEmail">Email</label>
+                <input
+                    id="newUserEmail"
+                    type="email"
+                    autocomplete="off"
+                    required
+                >
+
+                <label for="newUserTemporaryPassword">
+                    Temporary Password
+                </label>
+                <input
+                    id="newUserTemporaryPassword"
+                    type="password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <p class="helper-text">
+                    The user must choose a new password after signing in.
+                </p>
+
+                <button
+                    id="createUserButton"
+                    class="primary-button"
+                    type="submit"
+                >
+                    Create User
+                </button>
+            </form>
+
+            <div class="user-list-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">ACCOUNTS</p>
+                        <h2>Users</h2>
+                    </div>
+
+                    <button
+                        id="refreshUsersButton"
+                        class="secondary-button"
+                        type="button"
+                    >
+                        Refresh
+                    </button>
+                </div>
+
+                <div id="userList" class="user-list">
+                    <p class="user-empty-state">Loading users...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="audit-panel">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">ACCOUNT HISTORY</p>
+                    <h2>Recent Administration</h2>
+                </div>
+            </div>
+
+            <div id="userAuditList" class="audit-list">
+                <p class="user-empty-state">Loading history...</p>
+            </div>
+        </div>
+
+        <dialog id="temporaryPasswordDialog" class="password-dialog">
+            <form id="temporaryPasswordForm" method="dialog">
+                <h2>Set Temporary Password</h2>
+                <p id="temporaryPasswordUser"></p>
+
+                <label for="resetTemporaryPassword">
+                    Temporary Password
+                </label>
+                <input
+                    id="resetTemporaryPassword"
+                    type="password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <p class="helper-text">
+                    The user must replace it after their next sign-in.
+                </p>
+
+                <div class="dialog-actions">
+                    <button
+                        id="cancelTemporaryPasswordButton"
+                        class="secondary-button"
+                        type="button"
+                    >Cancel</button>
+
+                    <button
+                        id="saveTemporaryPasswordButton"
+                        class="primary-button"
+                        type="submit"
+                    >Save Password</button>
+                </div>
+            </form>
+        </dialog>
 
     </section>
 
@@ -1019,6 +1290,8 @@
 <script src="./js/auth.js"></script>
 <script src="./js/barcode.js"></script>
 <script src="./js/totes.js"></script>
+<script src="./js/sold.js"></script>
+<script src="./js/users.js"></script>
 <script src="./js/app.js"></script>
 
 </body>

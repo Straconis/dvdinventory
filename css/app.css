@@ -330,6 +330,11 @@ button {
     font-size: 1.5rem;
 }
 
+.action-card-danger .action-icon {
+    background: rgba(185, 28, 28, 0.18);
+    color: #fca5a5;
+}
+
 .workflow-card {
     width: min(720px, 100%);
 
@@ -374,6 +379,39 @@ input {
     transition:
         border-color 120ms ease,
         box-shadow 120ms ease;
+}
+
+select,
+textarea {
+    width: 100%;
+
+    padding: 11px 13px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    outline: none;
+
+    background: var(--background-secondary);
+    color: var(--text);
+
+    font: inherit;
+}
+
+select {
+    min-height: 48px;
+}
+
+textarea {
+    resize: vertical;
+}
+
+select:focus,
+textarea:focus {
+    border-color: var(--accent);
+
+    box-shadow:
+        0 0 0 3px rgba(250, 204, 21, 0.12);
 }
 
 input::placeholder {
@@ -423,6 +461,25 @@ input:focus {
 
 .primary-button:hover {
     background: var(--accent-hover);
+}
+
+.danger-button {
+    min-height: 48px;
+
+    margin-top: 24px;
+    padding: 10px 16px;
+
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+
+    background: #991b1b;
+    color: #fff;
+
+    font-weight: 750;
+}
+
+.danger-button:hover {
+    background: #b91c1c;
 }
 
 .helper-text {
@@ -955,6 +1012,311 @@ body.auth-loading .app-footer {
 button:disabled {
     cursor: wait;
     opacity: 0.65;
+}
+
+
+/* ---------------------------------------------------------
+   Sold inventory workflow
+--------------------------------------------------------- */
+
+.workflow-status {
+    margin: 1rem 0;
+    padding: 0.8rem 0.9rem;
+
+    border: 1px solid currentColor;
+    border-radius: 8px;
+
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.workflow-status-success {
+    color: var(--success);
+}
+
+.workflow-status-error {
+    color: #fecaca;
+}
+
+.workflow-status-info {
+    color: #cbd5e1;
+}
+
+.sold-details {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+
+    border-top: 1px solid var(--border);
+}
+
+#soldReleaseSummary {
+    padding: 0.9rem;
+
+    border-left: 3px solid var(--accent);
+
+    background: rgba(11, 18, 32, 0.55);
+}
+
+.sold-release-title,
+.sold-release-metadata {
+    display: block;
+}
+
+.sold-release-metadata {
+    margin-top: 0.3rem;
+
+    color: var(--muted);
+
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+
+/* ---------------------------------------------------------
+   User management
+--------------------------------------------------------- */
+
+.user-management-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.45fr);
+    gap: 2rem;
+    align-items: start;
+}
+
+.user-create-card {
+    width: 100%;
+}
+
+.user-create-card h2,
+.panel-heading h2 {
+    margin: 0;
+}
+
+.user-list-panel {
+    min-width: 0;
+}
+
+.panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+
+    margin-bottom: 1rem;
+}
+
+.panel-heading .secondary-button {
+    margin-top: 0;
+}
+
+.user-list,
+.audit-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.user-item {
+    padding: 1rem;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: rgba(23, 32, 51, 0.65);
+}
+
+.user-item-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.user-display-name,
+.user-account-detail {
+    display: block;
+}
+
+.user-account-detail {
+    margin-top: 0.25rem;
+
+    color: var(--muted);
+
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+.user-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem;
+}
+
+.user-badge {
+    padding: 0.25rem 0.45rem;
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+
+    color: #cbd5e1;
+
+    font-size: 0.68rem;
+    font-weight: 750;
+}
+
+.user-role-admin {
+    border-color: #a16207;
+    color: #fde68a;
+}
+
+.user-status-active {
+    border-color: #166534;
+    color: #bbf7d0;
+}
+
+.user-status-inactive,
+.user-password-pending {
+    border-color: #7f1d1d;
+    color: #fecaca;
+}
+
+.user-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    margin-top: 0.9rem;
+}
+
+.user-action-button {
+    min-height: 38px;
+    padding: 0.45rem 0.7rem;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--panel-hover);
+    color: var(--text);
+
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.user-action-button:hover {
+    border-color: #64748b;
+}
+
+.user-action-danger {
+    border-color: #7f1d1d;
+    color: #fecaca;
+}
+
+.current-account-note,
+.user-empty-state {
+    margin: 0.75rem 0 0;
+
+    color: var(--muted);
+
+    font-size: 0.8rem;
+}
+
+.audit-panel {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+
+    border-top: 1px solid var(--border);
+}
+
+.audit-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+
+    padding: 0.75rem 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.audit-item p {
+    margin: 0;
+
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
+.audit-time {
+    flex: 0 0 auto;
+
+    color: var(--muted);
+
+    font-size: 0.72rem;
+}
+
+.password-dialog {
+    width: min(460px, calc(100% - 2rem));
+    padding: 1.5rem;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--panel);
+    color: var(--text);
+}
+
+.password-dialog::backdrop {
+    background: rgba(3, 7, 18, 0.78);
+}
+
+.password-dialog h2 {
+    margin: 0 0 0.5rem;
+}
+
+.password-dialog > form > p:not(.helper-text) {
+    margin: 0 0 1.25rem;
+    color: var(--muted);
+}
+
+.password-dialog label {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.65rem;
+
+    margin-top: 1.25rem;
+}
+
+.dialog-actions .primary-button,
+.dialog-actions .secondary-button {
+    margin-top: 0;
+}
+
+@media (max-width: 900px) {
+    .user-management-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .user-item-heading,
+    .audit-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .user-badges {
+        justify-content: flex-start;
+    }
+
+    .user-action-button {
+        flex: 1 1 140px;
+    }
 }
 
 
