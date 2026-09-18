@@ -30,6 +30,24 @@
     const loginError =
         document.getElementById("loginError");
 
+    const passwordChangeForm =
+        document.getElementById("passwordChangeForm");
+
+    const newPassword =
+        document.getElementById("newPassword");
+
+    const confirmNewPassword =
+        document.getElementById("confirmNewPassword");
+
+    const passwordChangeButton =
+        document.getElementById("passwordChangeButton");
+
+    const passwordChangeError =
+        document.getElementById("passwordChangeError");
+
+    const passwordChangeLogoutButton =
+        document.getElementById("passwordChangeLogoutButton");
+
     const authDenied =
         document.getElementById("authDenied");
 
@@ -85,6 +103,33 @@
     }
 
 
+    function setPasswordChangeError(message) {
+        if (!passwordChangeError) {
+            return;
+        }
+
+        if (!message) {
+            passwordChangeError.textContent = "";
+            hide(passwordChangeError);
+            return;
+        }
+
+        passwordChangeError.textContent = message;
+        show(passwordChangeError);
+    }
+
+
+    function clearPasswordChangeInputs() {
+        if (newPassword) {
+            newPassword.value = "";
+        }
+
+        if (confirmNewPassword) {
+            confirmNewPassword.value = "";
+        }
+    }
+
+
     function showLoading() {
         document.body.classList.add("auth-loading");
         document.body.classList.remove("authenticated");
@@ -93,6 +138,7 @@
         show(authLoading);
 
         hide(loginForm);
+        hide(passwordChangeForm);
         hide(authDenied);
         hide(userMenu);
     }
@@ -107,6 +153,7 @@
 
         show(authGate);
         hide(authLoading);
+        hide(passwordChangeForm);
         hide(authDenied);
         hide(userMenu);
 
@@ -133,6 +180,7 @@
         show(authGate);
         hide(authLoading);
         hide(loginForm);
+        hide(passwordChangeForm);
         hide(userMenu);
 
         if (authDeniedMessage) {
@@ -142,6 +190,32 @@
         }
 
         show(authDenied);
+    }
+
+
+    function showPasswordChange(profile) {
+        currentProfile = profile;
+
+        document.body.classList.add("auth-loading");
+        document.body.classList.remove("authenticated");
+
+        show(authGate);
+
+        hide(authLoading);
+        hide(loginForm);
+        hide(authDenied);
+        hide(userMenu);
+
+        clearPasswordChangeInputs();
+        setPasswordChangeError("");
+
+        show(passwordChangeForm);
+
+        window.setTimeout(() => {
+            if (newPassword) {
+                newPassword.focus();
+            }
+        }, 0);
     }
 
 
@@ -248,7 +322,144 @@
             return;
         }
 
+        if (profile.must_change_password) {
+            showPasswordChange(profile);
+            return;
+        }
+
         showApplication(profile);
+    }
+
+
+    async function handlePasswordChange(event) {
+        event.preventDefault();
+
+        setPasswordChangeError("");
+
+        if (
+            !currentSession ||
+            !currentProfile ||
+            !currentProfile.active ||
+            !currentProfile.must_change_password
+        ) {
+            setPasswordChangeError(
+                "This account does not currently require an initial password change."
+            );
+            return;
+        }
+
+        const password =
+            newPassword?.value || "";
+
+        const confirmation =
+            confirmNewPassword?.value || "";
+
+        if (!password || !confirmation) {
+            setPasswordChangeError(
+                "Enter and confirm your new password."
+            );
+            return;
+        }
+
+        if (password !== confirmation) {
+            setPasswordChangeError(
+                "The passwords do not match."
+            );
+            return;
+        }
+
+        if (passwordChangeButton) {
+            passwordChangeButton.disabled = true;
+            passwordChangeButton.textContent =
+                "Saving Password...";
+        }
+
+        try {
+            const {
+                data: updateData,
+                error: updateError
+            } = await supabase.auth.updateUser({
+                password
+            });
+
+            if (updateError) {
+                throw updateError;
+            }
+
+            if (!updateData.user) {
+                throw new Error(
+                    "Password update completed without a user."
+                );
+            }
+
+            clearPasswordChangeInputs();
+
+            const {
+                data: completedProfile,
+                error: completionError
+            } = await supabase.rpc(
+                "complete_initial_password_change"
+            );
+
+            if (completionError) {
+                throw completionError;
+            }
+
+            let profile = completedProfile;
+
+            if (Array.isArray(profile)) {
+                profile = profile[0] || null;
+            }
+
+            if (!profile) {
+                profile = await loadProfile(currentSession);
+            }
+
+            if (
+                !profile ||
+                profile.id !== currentSession.user.id
+            ) {
+                throw new Error(
+                    "Password changed, but the application profile could not be verified."
+                );
+            }
+
+            if (!profile.active) {
+                showDenied(
+                    "This DVD Inventory account is inactive."
+                );
+                return;
+            }
+
+            if (profile.must_change_password) {
+                throw new Error(
+                    "Password changed, but account setup is still incomplete."
+                );
+            }
+
+            currentProfile = profile;
+            showApplication(profile);
+        }
+        catch (error) {
+            console.error(
+                "Initial password change failed:",
+                error
+            );
+
+            clearPasswordChangeInputs();
+
+            setPasswordChangeError(
+                error?.message ||
+                "The password could not be changed. Please try again."
+            );
+        }
+        finally {
+            if (passwordChangeButton) {
+                passwordChangeButton.disabled = false;
+                passwordChangeButton.textContent =
+                    "Save New Password";
+            }
+        }
     }
 
 
@@ -378,6 +589,22 @@
     }
 
 
+    if (passwordChangeForm) {
+        passwordChangeForm.addEventListener(
+            "submit",
+            handlePasswordChange
+        );
+    }
+
+
+    if (passwordChangeLogoutButton) {
+        passwordChangeLogoutButton.addEventListener(
+            "click",
+            signOut
+        );
+    }
+
+
     if (logoutButton) {
         logoutButton.addEventListener(
             "click",
@@ -418,7 +645,8 @@
             return Boolean(
                 currentSession &&
                 currentProfile &&
-                currentProfile.active
+                currentProfile.active &&
+                !currentProfile.must_change_password
             );
         },
 
@@ -426,6 +654,7 @@
             return Boolean(
                 currentProfile &&
                 currentProfile.active &&
+                !currentProfile.must_change_password &&
                 currentProfile.role === "admin"
             );
         },
