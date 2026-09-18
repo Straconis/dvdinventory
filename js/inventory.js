@@ -41,6 +41,20 @@
         return element;
     }
 
+    function actionButton(label, className, handler) {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = [
+            "inventory-action-button",
+            className || ""
+        ].filter(Boolean).join(" ");
+        button.textContent = label;
+        button.addEventListener("click", handler);
+
+        return button;
+    }
+
     function setStatus(element, message, type) {
         if (!element) {
             return;
@@ -195,6 +209,32 @@
             );
         }
 
+        if (
+            window.DVD_RELEASE_EDITOR &&
+            typeof window.DVD_RELEASE_EDITOR.open === "function"
+        ) {
+            const releaseActions = document.createElement("div");
+
+            releaseActions.className = "inventory-result-actions";
+            releaseActions.appendChild(
+                actionButton("Edit DVD Info", "", () => {
+                    window.DVD_RELEASE_EDITOR.open(
+                        item.release,
+                        (updatedRelease) => {
+                            item.release = Object.assign(
+                                {},
+                                item.release,
+                                updatedRelease
+                            );
+                            renderInventory();
+                            renderSearch();
+                        }
+                    );
+                })
+            );
+            releaseCell.appendChild(releaseActions);
+        }
+
         upcCell.className = "inventory-result-upc-cell";
         upcCell.appendChild(
             textElement("span", "inventory-result-upc", item.release.upc)
@@ -233,6 +273,56 @@
                     )
                 );
             }
+
+            const locationActions = document.createElement("div");
+
+            locationActions.className = "inventory-location-actions";
+
+            if (
+                window.DVD_TOTE_EDITOR &&
+                typeof window.DVD_TOTE_EDITOR.open === "function"
+            ) {
+                locationActions.appendChild(
+                    actionButton("Edit Tote Location", "", () => {
+                        window.DVD_TOTE_EDITOR.open(
+                            tote,
+                            (updatedTote) => {
+                                Object.assign(tote, updatedTote);
+                                renderInventory();
+                                renderSearch();
+                            }
+                        );
+                    })
+                );
+            }
+
+            if (
+                window.DVD_CHECKOUT &&
+                typeof window.DVD_CHECKOUT.open === "function"
+            ) {
+                locationActions.appendChild(
+                    actionButton("Check Out", "", () => {
+                        window.DVD_CHECKOUT.open(item.release, tote);
+                    })
+                );
+            }
+
+            if (
+                window.DVD_SOLD &&
+                typeof window.DVD_SOLD.open === "function"
+            ) {
+                locationActions.appendChild(
+                    actionButton(
+                        "Remove",
+                        "inventory-action-danger",
+                        () => {
+                            window.DVD_SOLD.open(item.release.upc, tote.id);
+                        }
+                    )
+                );
+            }
+
+            locationElement.appendChild(locationActions);
 
             locationsCell.appendChild(locationElement);
         }

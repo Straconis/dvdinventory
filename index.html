@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="./css/app.css?v=20260918-11"
+        href="./css/app.css?v=20260918-12"
     >
 </head>
 
@@ -886,7 +886,7 @@
             </div>
         </div>
 
-        <div class="workflow-card">
+        <form id="checkoutForm" class="workflow-card">
 
             <label for="checkoutTote">
                 Source Tote
@@ -896,6 +896,8 @@
                 id="checkoutTote"
                 type="text"
                 placeholder="Scan or enter tote code"
+                autocomplete="off"
+                required
             >
 
             <label for="checkoutUpc">
@@ -907,6 +909,8 @@
                 type="text"
                 inputmode="numeric"
                 placeholder="Scan or enter UPC"
+                autocomplete="off"
+                required
             >
 
             <label for="checkoutPerson">
@@ -929,14 +933,41 @@
                 placeholder="eBay, Facebook Marketplace, customer, etc."
             >
 
+            <label for="checkoutQuantity">Quantity</label>
+
+            <input
+                id="checkoutQuantity"
+                type="number"
+                min="1"
+                step="1"
+                value="1"
+                required
+            >
+
+            <label for="checkoutNotes">Notes</label>
+
+            <textarea
+                id="checkoutNotes"
+                rows="3"
+                placeholder="Optional checkout notes"
+            ></textarea>
+
             <button
+                id="checkoutSubmitButton"
                 class="primary-button"
-                type="button"
+                type="submit"
             >
                 Check Out DVD
             </button>
 
-        </div>
+            <div
+                id="checkoutStatus"
+                class="workflow-status hidden"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+        </form>
 
     </section>
 
@@ -1513,6 +1544,52 @@
     </form>
 </dialog>
 
+<dialog
+    id="toteEditorDialog"
+    class="password-dialog tote-editor-dialog"
+>
+    <form id="toteEditorForm" method="dialog">
+        <h2>Edit Tote Location</h2>
+        <p id="toteEditorCode"></p>
+
+        <label for="toteEditorDescription">Description</label>
+        <input
+            id="toteEditorDescription"
+            type="text"
+            autocomplete="off"
+        >
+
+        <label for="toteEditorLocation">Physical Location</label>
+        <input
+            id="toteEditorLocation"
+            type="text"
+            placeholder="Garage shelf, basement rack, etc."
+            autocomplete="off"
+        >
+
+        <div
+            id="toteEditorStatus"
+            class="workflow-status hidden"
+            role="status"
+            aria-live="polite"
+        ></div>
+
+        <div class="dialog-actions">
+            <button
+                id="cancelToteEditorButton"
+                class="secondary-button"
+                type="button"
+            >Cancel</button>
+
+            <button
+                id="saveToteEditorButton"
+                class="primary-button"
+                type="submit"
+            >Save Tote</button>
+        </div>
+    </form>
+</dialog>
+
 <footer class="app-footer">
     DVD Inventory
     <span>&bull;</span>
@@ -1526,19 +1603,21 @@
 <script src="./js/supabase-client.js"></script>
 <script src="./js/auth.js"></script>
 <script src="./js/barcode.js"></script>
-<script src="./js/release-editor.js?v=20260918-11"></script>
+<script src="./js/release-editor.js?v=20260918-12"></script>
+<script src="./js/tote-editor.js?v=20260918-12"></script>
 <script src="./js/totes.js?v=20260918-10"></script>
 <script src="./js/add-dvd.js?v=20260918-9"></script>
-<script src="./js/sold.js?v=20260918-6"></script>
+<script src="./js/sold.js?v=20260918-12"></script>
+<script src="./js/checkout.js?v=20260918-12"></script>
 <script src="./js/users.js?v=20260918-7"></script>
-<script src="./js/inventory.js?v=20260918-11"></script>
+<script src="./js/inventory.js?v=20260918-12"></script>
 <script
     src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js"
     integrity="sha384-HRtzk9lZgkbSgvUyQrnfC/GxiXZgwaNyD7hC9wcXlsBpDhkS80ISl73juef2FRuf"
     crossorigin="anonymous"
 ></script>
 <script src="./js/scanner.js?v=20260918-8"></script>
-<script src="./js/app.js?v=20260918-8"></script>
+<script src="./js/app.js?v=20260918-12"></script>
 
 </body>
 </html>

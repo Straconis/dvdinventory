@@ -374,4 +374,24 @@
     if (submitButton) {
         submitButton.addEventListener("click", recordSoldDvd);
     }
+
+    window.DVD_SOLD = Object.freeze({
+        async open(upc, toteId) {
+            upcInput.value = String(upc || "");
+
+            if (
+                window.DVD_APP &&
+                typeof window.DVD_APP.showPage === "function"
+            ) {
+                window.DVD_APP.showPage("sold");
+            }
+
+            const found = await lookupRelease();
+
+            if (found && toteId !== undefined && toteId !== null) {
+                toteSelect.value = String(toteId);
+                updateQuantityLimit();
+            }
+        }
+    });
 })();

@@ -59,6 +59,11 @@ function showPage(pageName) {
 }
 
 
+window.DVD_APP = Object.freeze({
+    showPage
+});
+
+
 pageButtons.forEach((button) => {
 
     button.addEventListener("click", (event) => {

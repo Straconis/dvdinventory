@@ -1839,6 +1839,38 @@ button:disabled {
     margin-top: 0.65rem;
 }
 
+.inventory-result-actions,
+.inventory-location-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.65rem;
+}
+
+.inventory-action-button {
+    min-height: 34px;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--panel-hover);
+    color: var(--text);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.inventory-action-button:hover {
+    border-color: #64748b;
+}
+
+.inventory-action-danger {
+    border-color: #7f1d1d;
+    color: #fecaca;
+}
+
+.tote-editor-dialog {
+    width: min(520px, calc(100% - 2rem));
+}
+
 .inventory-result-quantity {
     text-align: right;
     font-size: 1.05rem;
