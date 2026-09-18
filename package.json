@@ -1,0 +1,27 @@
+{
+  "name": "dvdinventory",
+  "version": "1.0.0",
+  "description": "Web-based DVD inventory management system for tracking DVD editions, tote locations, quantities, checkouts, and returns.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Straconis/dvdinventory.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Straconis/dvdinventory/issues"
+  },
+  "homepage": "https://github.com/Straconis/dvdinventory#readme",
+  "devDependencies": {
+    "supabase": "^2.117.0"
+  }
+}
