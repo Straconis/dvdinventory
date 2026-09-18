@@ -79,7 +79,13 @@
         }
 
         if (targetFormat === "upc") {
-            return value.replace(/\s+/g, "");
+            const compactValue = value.replace(/\s+/g, "");
+
+            if (/^0\d{12}$/.test(compactValue)) {
+                return compactValue.substring(1);
+            }
+
+            return compactValue;
         }
 
         return value;
