@@ -242,6 +242,11 @@
 
         const previewWidth = preview.clientWidth;
         const previewHeight = preview.clientHeight;
+
+        if (previewWidth <= 0 || previewHeight <= 0) {
+            return;
+        }
+
         const scale = Math.min(
             previewWidth / video.videoWidth,
             previewHeight / video.videoHeight
@@ -477,6 +482,7 @@
             await startNativeDetector();
             await updateCameraChoices();
             updateScanGuide();
+            window.requestAnimationFrame(updateScanGuide);
             scanActiveRegion();
         }
         catch (error) {
@@ -560,4 +566,11 @@
 
     window.addEventListener("resize", updateScanGuide);
     video.addEventListener("loadedmetadata", updateScanGuide);
+
+    if (typeof window.ResizeObserver === "function" && preview) {
+        const previewObserver =
+            new window.ResizeObserver(updateScanGuide);
+
+        previewObserver.observe(preview);
+    }
 })();
