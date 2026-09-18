@@ -122,12 +122,15 @@
 
     function createCodeReader() {
         const zxing = window.ZXingBrowser;
-        const formats = targetFormat === "tote"
-            ? [zxing.BarcodeFormat.CODE_128]
-            : [
-                zxing.BarcodeFormat.UPC_A,
-                zxing.BarcodeFormat.UPC_E
-            ];
+
+        if (targetFormat === "tote") {
+            return new zxing.BrowserMultiFormatReader();
+        }
+
+        const formats = [
+            zxing.BarcodeFormat.UPC_A,
+            zxing.BarcodeFormat.UPC_E
+        ];
 
         const reader =
             new zxing.BrowserMultiFormatOneDReader(
