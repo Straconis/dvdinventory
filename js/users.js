@@ -35,6 +35,20 @@
         document.getElementById("cancelTemporaryPasswordButton");
     const savePasswordButton =
         document.getElementById("saveTemporaryPasswordButton");
+    const ownPasswordDialog =
+        document.getElementById("changeOwnPasswordDialog");
+    const ownPasswordForm =
+        document.getElementById("changeOwnPasswordForm");
+    const currentAccountPassword =
+        document.getElementById("currentAccountPassword");
+    const newAccountPassword =
+        document.getElementById("newAccountPassword");
+    const confirmAccountPassword =
+        document.getElementById("confirmAccountPassword");
+    const cancelOwnPasswordButton =
+        document.getElementById("cancelOwnPasswordButton");
+    const saveOwnPasswordButton =
+        document.getElementById("saveOwnPasswordButton");
 
     let currentProfile = null;
     let users = [];
@@ -192,6 +206,18 @@
         window.setTimeout(() => resetPasswordInput.focus(), 0);
     }
 
+    function clearOwnPasswordInputs() {
+        currentAccountPassword.value = "";
+        newAccountPassword.value = "";
+        confirmAccountPassword.value = "";
+    }
+
+    function openOwnPasswordDialog() {
+        clearOwnPasswordInputs();
+        ownPasswordDialog.showModal();
+        window.setTimeout(() => currentAccountPassword.focus(), 0);
+    }
+
     async function updateUser(profile, changes, successMessage) {
         try {
             setStatus(`Updating ${profile.username}...`, "info");
@@ -304,6 +330,19 @@
                         "Current account"
                     )
                 );
+
+                const currentAccountActions =
+                    document.createElement("div");
+
+                currentAccountActions.className = "user-actions";
+                currentAccountActions.appendChild(
+                    createUserActionButton(
+                        "Change My Password",
+                        "user-action-button",
+                        openOwnPasswordDialog
+                    )
+                );
+                card.appendChild(currentAccountActions);
             }
             else {
                 const actions = document.createElement("div");
@@ -554,6 +593,92 @@
         }
     }
 
+    async function changeOwnPassword(event) {
+        event.preventDefault();
+
+        const currentPassword = currentAccountPassword.value;
+        const newPassword = newAccountPassword.value;
+        const confirmation = confirmAccountPassword.value;
+
+        if (newPassword.length < 8) {
+            setStatus(
+                "New password must be at least 8 characters.",
+                "error"
+            );
+            return;
+        }
+
+        if (newPassword !== confirmation) {
+            setStatus("The new passwords do not match.", "error");
+            return;
+        }
+
+        if (currentPassword === newPassword) {
+            setStatus(
+                "Choose a new password that differs from the current password.",
+                "error"
+            );
+            return;
+        }
+
+        const session =
+            window.DVD_AUTH && window.DVD_AUTH.getSession();
+        const email =
+            session && session.user ? session.user.email : "";
+
+        if (!email) {
+            setStatus(
+                "Could not verify the signed-in account.",
+                "error"
+            );
+            return;
+        }
+
+        saveOwnPasswordButton.disabled = true;
+        saveOwnPasswordButton.textContent = "Changing...";
+
+        try {
+            const { error: signInError } =
+                await supabase.auth.signInWithPassword({
+                    email,
+                    password: currentPassword
+                });
+
+            if (signInError) {
+                throw new Error("The current password is incorrect.");
+            }
+
+            const { error: updateError } =
+                await supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+            if (updateError) {
+                throw updateError;
+            }
+
+            clearOwnPasswordInputs();
+            ownPasswordDialog.close();
+            setStatus(
+                "Your password was changed successfully.",
+                "success"
+            );
+        }
+        catch (error) {
+            console.error("Failed to change current password:", error);
+            setStatus(
+                error && error.message
+                    ? error.message
+                    : "Could not change your password.",
+                "error"
+            );
+        }
+        finally {
+            saveOwnPasswordButton.disabled = false;
+            saveOwnPasswordButton.textContent = "Change Password";
+        }
+    }
+
     function initializeForProfile(profile) {
         currentProfile = profile || null;
         const isAdmin = Boolean(
@@ -606,10 +731,24 @@
         passwordForm.addEventListener("submit", resetPassword);
     }
 
+    if (ownPasswordForm) {
+        ownPasswordForm.addEventListener(
+            "submit",
+            changeOwnPassword
+        );
+    }
+
     if (cancelPasswordButton) {
         cancelPasswordButton.addEventListener("click", () => {
             passwordDialog.close();
             resetTarget = null;
+        });
+    }
+
+    if (cancelOwnPasswordButton) {
+        cancelOwnPasswordButton.addEventListener("click", () => {
+            clearOwnPasswordInputs();
+            ownPasswordDialog.close();
         });
     }
 })();

@@ -648,6 +648,61 @@
             </form>
         </dialog>
 
+        <dialog id="changeOwnPasswordDialog" class="password-dialog">
+            <form id="changeOwnPasswordForm" method="dialog">
+                <h2>Change My Password</h2>
+                <p>
+                    Verify your current password, then choose a new one.
+                </p>
+
+                <label for="currentAccountPassword">
+                    Current Password
+                </label>
+                <input
+                    id="currentAccountPassword"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <label for="newAccountPassword">
+                    New Password
+                </label>
+                <input
+                    id="newAccountPassword"
+                    type="password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <label for="confirmAccountPassword">
+                    Confirm New Password
+                </label>
+                <input
+                    id="confirmAccountPassword"
+                    type="password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <div class="dialog-actions">
+                    <button
+                        id="cancelOwnPasswordButton"
+                        class="secondary-button"
+                        type="button"
+                    >Cancel</button>
+
+                    <button
+                        id="saveOwnPasswordButton"
+                        class="primary-button"
+                        type="submit"
+                    >Change Password</button>
+                </div>
+            </form>
+        </dialog>
+
     </section>
 
 
