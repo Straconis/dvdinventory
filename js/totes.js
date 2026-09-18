@@ -7,7 +7,14 @@
         );
     }
 
+    if (!window.DVD_BARCODES) {
+        throw new Error(
+            "DVD Inventory barcode tools were not initialized."
+        );
+    }
+
     const supabase = window.dvdSupabase;
+    const barcodes = window.DVD_BARCODES;
 
     const toteCodeInput =
         document.getElementById("newToteCode");
@@ -32,6 +39,7 @@
 
     let loadingTotes = false;
     let creatingTote = false;
+    const deletingToteIds = new Set();
 
     function normalizeOptionalText(value) {
         const normalized = String(value || "").trim();
@@ -104,6 +112,407 @@
         return element;
     }
 
+    function createActionButton(label, className, handler) {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = [
+            "tote-action-button",
+            className || ""
+        ].filter(Boolean).join(" ");
+        button.textContent = label;
+        button.addEventListener("click", handler);
+
+        return button;
+    }
+
+    function getRelatedTitle(release) {
+        if (!release || !release.titles) {
+            return null;
+        }
+
+        return Array.isArray(release.titles)
+            ? release.titles[0] || null
+            : release.titles;
+    }
+
+    function renderToteContents(panel, inventoryRows) {
+        panel.replaceChildren();
+
+        if (!Array.isArray(inventoryRows) || inventoryRows.length === 0) {
+            panel.appendChild(
+                createTextElement(
+                    "p",
+                    "tote-contents-empty",
+                    "No DVDs are currently stored in this tote."
+                )
+            );
+            return;
+        }
+
+        const table = document.createElement("table");
+        const tableHead = document.createElement("thead");
+        const headingRow = document.createElement("tr");
+        const titleHeading = createTextElement("th", "", "DVD");
+        const quantityHeading = createTextElement(
+            "th",
+            "tote-quantity-heading",
+            "Quantity"
+        );
+
+        titleHeading.scope = "col";
+        quantityHeading.scope = "col";
+        headingRow.append(titleHeading, quantityHeading);
+        tableHead.appendChild(headingRow);
+
+        const tableBody = document.createElement("tbody");
+
+        for (const inventoryRow of inventoryRows) {
+            const release = inventoryRow.physical_releases || {};
+            const relatedTitle = getRelatedTitle(release);
+            const displayTitle =
+                (relatedTitle && relatedTitle.title) ||
+                release.release_title ||
+                (release.upc ? `UPC ${release.upc}` : "Unknown DVD");
+            const details = [];
+
+            if (
+                release.release_title &&
+                release.release_title !== displayTitle
+            ) {
+                details.push(release.release_title);
+            }
+
+            if (release.edition) {
+                details.push(release.edition);
+            }
+
+            if (release.format) {
+                details.push(release.format);
+            }
+
+            const year =
+                release.release_year ||
+                (relatedTitle && relatedTitle.year);
+
+            if (year) {
+                details.push(String(year));
+            }
+
+            if (release.upc) {
+                details.push(`UPC ${release.upc}`);
+            }
+
+            const row = document.createElement("tr");
+            const titleCell = document.createElement("td");
+            const quantityCell = createTextElement(
+                "td",
+                "tote-quantity",
+                String(inventoryRow.quantity)
+            );
+
+            titleCell.appendChild(
+                createTextElement(
+                    "strong",
+                    "tote-release-title",
+                    displayTitle
+                )
+            );
+
+            if (details.length > 0) {
+                titleCell.appendChild(
+                    createTextElement(
+                        "span",
+                        "tote-release-details",
+                        details.join(" | ")
+                    )
+                );
+            }
+
+            row.append(titleCell, quantityCell);
+            tableBody.appendChild(row);
+        }
+
+        table.className = "tote-contents-table";
+        table.append(tableHead, tableBody);
+        panel.appendChild(table);
+    }
+
+    async function toggleToteContents(tote, panel, button) {
+        if (!panel.hidden) {
+            panel.hidden = true;
+            button.textContent = "View Contents";
+            button.setAttribute("aria-expanded", "false");
+            return;
+        }
+
+        panel.hidden = false;
+        button.textContent = "Hide Contents";
+        button.setAttribute("aria-expanded", "true");
+
+        if (panel.dataset.loaded === "true") {
+            return;
+        }
+
+        button.disabled = true;
+        panel.replaceChildren(
+            createTextElement(
+                "p",
+                "tote-contents-empty",
+                "Loading tote contents..."
+            )
+        );
+
+        try {
+            const { data, error } = await supabase
+                .from("inventory")
+                .select(
+                    `
+                    id,
+                    quantity,
+                    physical_releases (
+                        id,
+                        upc,
+                        release_title,
+                        edition,
+                        format,
+                        release_year,
+                        titles (
+                            title,
+                            year
+                        )
+                    )
+                    `
+                )
+                .eq("tote_id", tote.id)
+                .gt("quantity", 0)
+                .order("id", {
+                    ascending: true
+                });
+
+            if (error) {
+                throw error;
+            }
+
+            renderToteContents(panel, data || []);
+            panel.dataset.loaded = "true";
+        }
+        catch (error) {
+            console.error("Failed to load tote contents:", error);
+            panel.replaceChildren(
+                createTextElement(
+                    "p",
+                    "tote-contents-error",
+                    "Could not load this tote's contents. Try again."
+                )
+            );
+            setStatus(
+                `Could not load contents for ${tote.tote_code}.`,
+                "error"
+            );
+        }
+        finally {
+            button.disabled = false;
+        }
+    }
+
+    function printToteLabel(tote) {
+        try {
+            const toteCode =
+                normalizeToteCode(tote.tote_code) || tote.tote_code;
+
+            barcodes.printCode128Label(toteCode);
+        }
+        catch (error) {
+            console.error("Failed to print tote label:", error);
+            setStatus(
+                error && error.message
+                    ? error.message
+                    : "Could not open the tote label for printing.",
+                "error"
+            );
+        }
+    }
+
+    function saveToteBarcode(tote) {
+        try {
+            const toteCode =
+                normalizeToteCode(tote.tote_code) || tote.tote_code;
+
+            barcodes.downloadCode128Label(
+                toteCode,
+                `${toteCode}-barcode.png`
+            );
+            setStatus(
+                `Saved the ${toteCode} barcode image.`,
+                "success"
+            );
+        }
+        catch (error) {
+            console.error("Failed to save tote barcode:", error);
+            setStatus(
+                "Could not save the tote barcode image.",
+                "error"
+            );
+        }
+    }
+
+    async function deleteTote(tote, button) {
+        if (deletingToteIds.has(tote.id)) {
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Delete ${tote.tote_code}?\n\n` +
+            "Only empty, unused totes can be deleted. " +
+            "Totes with inventory or history will be blocked."
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        deletingToteIds.add(tote.id);
+        button.disabled = true;
+        button.textContent = "Deleting...";
+
+        try {
+            setStatus(`Deleting ${tote.tote_code}...`, "info");
+
+            const { error } = await supabase.rpc(
+                "delete_empty_tote",
+                {
+                    p_tote_id: tote.id
+                }
+            );
+
+            if (error) {
+                throw error;
+            }
+
+            setStatus(
+                `${tote.tote_code} was deleted.`,
+                "success"
+            );
+            await loadTotes({
+                silent: true
+            });
+        }
+        catch (error) {
+            console.error("Failed to delete tote:", error);
+
+            const message = String(
+                error && error.message ? error.message : ""
+            ).toLowerCase();
+            const isReferenced = [
+                "inventory",
+                "checkout",
+                "transaction",
+                "referenced",
+                "foreign key"
+            ].some((term) => message.includes(term));
+
+            setStatus(
+                isReferenced
+                    ? `${tote.tote_code} cannot be deleted because it has inventory or history.`
+                    : `Could not delete ${tote.tote_code}. Try again.`,
+                "error"
+            );
+        }
+        finally {
+            deletingToteIds.delete(tote.id);
+            button.disabled = false;
+            button.textContent = "Delete Tote";
+        }
+    }
+
+    function renderToteCard(tote) {
+        const card = document.createElement("article");
+        const heading = document.createElement("div");
+
+        card.className = "tote-item";
+        heading.className = "tote-item-heading";
+        heading.appendChild(
+            createTextElement(
+                "strong",
+                "tote-item-code",
+                tote.tote_code
+            )
+        );
+        card.appendChild(heading);
+
+        if (tote.description) {
+            card.appendChild(
+                createTextElement(
+                    "p",
+                    "tote-item-description",
+                    tote.description
+                )
+            );
+        }
+
+        const locationText = tote.physical_location
+            ? `Location: ${tote.physical_location}`
+            : "Location: Not specified";
+
+        card.appendChild(
+            createTextElement(
+                "p",
+                "tote-item-location",
+                locationText
+            )
+        );
+
+        const actions = document.createElement("div");
+        const contentsPanel = document.createElement("div");
+        const contentsId = `tote-contents-${tote.id}`;
+        let contentsButton;
+
+        actions.className = "tote-actions";
+        contentsPanel.className = "tote-contents";
+        contentsPanel.id = contentsId;
+        contentsPanel.hidden = true;
+
+        contentsButton = createActionButton(
+            "View Contents",
+            "",
+            () => {
+                toggleToteContents(
+                    tote,
+                    contentsPanel,
+                    contentsButton
+                );
+            }
+        );
+        contentsButton.setAttribute("aria-expanded", "false");
+        contentsButton.setAttribute("aria-controls", contentsId);
+
+        actions.append(
+            contentsButton,
+            createActionButton("Print Label", "", () => {
+                printToteLabel(tote);
+            }),
+            createActionButton("Save Barcode", "", () => {
+                saveToteBarcode(tote);
+            })
+        );
+
+        let deleteButton;
+
+        deleteButton = createActionButton(
+            "Delete Tote",
+            "tote-action-danger",
+            () => {
+                deleteTote(tote, deleteButton);
+            }
+        );
+        actions.appendChild(deleteButton);
+
+        card.append(actions, contentsPanel);
+
+        return card;
+    }
+
     function renderTotes(totes) {
         if (!toteList) {
             return;
@@ -124,50 +533,7 @@
         }
 
         for (const tote of totes) {
-            const card =
-                document.createElement("article");
-
-            card.className = "tote-item";
-
-            const heading =
-                document.createElement("div");
-
-            heading.className = "tote-item-heading";
-
-            heading.appendChild(
-                createTextElement(
-                    "strong",
-                    "tote-item-code",
-                    tote.tote_code
-                )
-            );
-
-            card.appendChild(heading);
-
-            if (tote.description) {
-                card.appendChild(
-                    createTextElement(
-                        "p",
-                        "tote-item-description",
-                        tote.description
-                    )
-                );
-            }
-
-            const locationText =
-                tote.physical_location
-                    ? `Location: ${tote.physical_location}`
-                    : "Location: Not specified";
-
-            card.appendChild(
-                createTextElement(
-                    "p",
-                    "tote-item-location",
-                    locationText
-                )
-            );
-
-            toteList.appendChild(card);
+            toteList.appendChild(renderToteCard(tote));
         }
     }
 

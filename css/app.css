@@ -1029,6 +1029,10 @@ button:disabled {
     margin: 0;
 }
 
+.tote-list-heading .secondary-button {
+    margin-top: 0;
+}
+
 .tote-list {
     display: grid;
     gap: 0.75rem;
@@ -1037,7 +1041,7 @@ button:disabled {
 .tote-item {
     padding: 1rem;
     border: 1px solid var(--border-color, rgba(127, 127, 127, 0.35));
-    border-radius: 0.65rem;
+    border-radius: 8px;
 }
 
 .tote-item-heading {
@@ -1062,9 +1066,120 @@ button:disabled {
     opacity: 0.75;
 }
 
+.tote-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+
+    margin-top: 1rem;
+}
+
+.tote-action-button {
+    min-height: 40px;
+    padding: 0.55rem 0.8rem;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--panel-hover);
+    color: var(--text);
+
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.tote-action-button:hover {
+    border-color: #64748b;
+}
+
+.tote-action-danger {
+    border-color: #7f1d1d;
+    background: rgba(127, 29, 29, 0.18);
+    color: #fecaca;
+}
+
+.tote-action-danger:hover {
+    border-color: #ef4444;
+}
+
+.tote-contents {
+    margin-top: 1rem;
+    padding-top: 1rem;
+
+    border-top: 1px solid var(--border);
+
+    overflow-x: auto;
+}
+
+.tote-contents[hidden] {
+    display: none;
+}
+
+.tote-contents-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tote-contents-table th,
+.tote-contents-table td {
+    padding: 0.7rem 0.65rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.tote-contents-table th {
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.tote-contents-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.tote-quantity-heading,
+.tote-quantity {
+    width: 6.5rem;
+    text-align: right !important;
+}
+
+.tote-release-title,
+.tote-release-details {
+    display: block;
+}
+
+.tote-release-details {
+    margin-top: 0.25rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+.tote-contents-empty,
+.tote-contents-error {
+    margin: 0;
+    padding: 0.35rem 0;
+    color: var(--muted);
+}
+
+.tote-contents-error {
+    color: #fecaca;
+}
+
 @media (max-width: 640px) {
     .tote-list-heading {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .tote-action-button {
+        flex: 1 1 145px;
+    }
+
+    .tote-contents-table th,
+    .tote-contents-table td {
+        padding-right: 0.4rem;
+        padding-left: 0.4rem;
     }
 }
