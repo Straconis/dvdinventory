@@ -15,6 +15,8 @@
     let targetFormat = "barcode";
     let stopping = false;
     let resultAccepted = false;
+    let nativeDetector = null;
+    let nativeScanTimer = null;
 
     function setStatus(message, type) {
         status.textContent = message;
@@ -32,6 +34,13 @@
         }
 
         stopping = true;
+
+        if (nativeScanTimer) {
+            window.clearTimeout(nativeScanTimer);
+            nativeScanTimer = null;
+        }
+
+        nativeDetector = null;
 
         if (scannerControls) {
             scannerControls.stop();
@@ -117,10 +126,7 @@
             ? [zxing.BarcodeFormat.CODE_128]
             : [
                 zxing.BarcodeFormat.UPC_A,
-                zxing.BarcodeFormat.UPC_E,
-                zxing.BarcodeFormat.EAN_13,
-                zxing.BarcodeFormat.EAN_8,
-                zxing.BarcodeFormat.CODE_128
+                zxing.BarcodeFormat.UPC_E
             ];
 
         const reader =
@@ -135,6 +141,126 @@
         reader.possibleFormats = formats;
 
         return reader;
+    }
+
+    async function optimizeCameraFocus() {
+        const track = video.srcObject
+            ?.getVideoTracks()[0];
+
+        if (
+            !track ||
+            typeof track.getCapabilities !== "function" ||
+            typeof track.applyConstraints !== "function"
+        ) {
+            return;
+        }
+
+        const capabilities = track.getCapabilities();
+
+        if (
+            Array.isArray(capabilities.focusMode) &&
+            capabilities.focusMode.includes("continuous")
+        ) {
+            try {
+                await track.applyConstraints({
+                    advanced: [
+                        {
+                            focusMode: "continuous"
+                        }
+                    ]
+                });
+            }
+            catch (error) {
+                console.debug(
+                    "Continuous camera focus is unavailable:",
+                    error
+                );
+            }
+        }
+    }
+
+    async function scanWithNativeDetector() {
+        if (
+            !nativeDetector ||
+            resultAccepted ||
+            !dialog.open
+        ) {
+            return;
+        }
+
+        const detector = nativeDetector;
+
+        try {
+            const barcodes = await detector.detect(video);
+
+            if (nativeDetector !== detector || !dialog.open) {
+                return;
+            }
+
+            if (barcodes.length > 0 && barcodes[0].rawValue) {
+                acceptResult({
+                    getText() {
+                        return barcodes[0].rawValue;
+                    }
+                });
+            }
+        }
+        catch (error) {
+            console.debug(
+                "Native barcode scan attempt failed:",
+                error
+            );
+        }
+
+        if (!resultAccepted && nativeDetector && dialog.open) {
+            nativeScanTimer = window.setTimeout(
+                scanWithNativeDetector,
+                120
+            );
+        }
+    }
+
+    async function startNativeDetector() {
+        if (
+            targetFormat !== "upc" ||
+            typeof window.BarcodeDetector !== "function"
+        ) {
+            return;
+        }
+
+        try {
+            const requestedFormats = [
+                "upc_a",
+                "upc_e",
+                "ean_13",
+                "ean_8",
+                "code_128"
+            ];
+            const supportedFormats =
+                typeof window.BarcodeDetector
+                    .getSupportedFormats === "function"
+                    ? await window.BarcodeDetector
+                        .getSupportedFormats()
+                    : requestedFormats;
+            const formats = requestedFormats.filter(
+                (format) => supportedFormats.includes(format)
+            );
+
+            if (formats.length === 0) {
+                return;
+            }
+
+            nativeDetector = new window.BarcodeDetector({
+                formats
+            });
+            scanWithNativeDetector();
+        }
+        catch (error) {
+            console.debug(
+                "Native barcode detection is unavailable:",
+                error
+            );
+        }
     }
 
     function getCameraConstraints(deviceId) {
@@ -242,6 +368,8 @@
                 handleDecode
             );
 
+            await optimizeCameraFocus();
+            await startNativeDetector();
             await updateCameraChoices();
         }
         catch (error) {
