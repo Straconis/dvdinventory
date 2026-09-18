@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="./css/app.css?v=20260918-10"
+        href="./css/app.css?v=20260918-11"
     >
 </head>
 
@@ -487,20 +487,31 @@
             </div>
         </div>
 
-        <div class="empty-state">
-            <div class="empty-icon">▤</div>
-            <h2>No DVDs inventoried yet</h2>
-            <p>
-                Add your first tote and begin scanning DVDs.
-            </p>
+        <div class="inventory-panel">
+            <div class="inventory-panel-heading">
+                <p id="inventorySummary" class="inventory-summary">
+                    Loading inventory...
+                </p>
 
-            <button
-                class="primary-button"
-                data-page="add"
-                type="button"
-            >
-                Add DVDs
-            </button>
+                <button
+                    id="refreshInventoryButton"
+                    class="secondary-button"
+                    type="button"
+                >Refresh</button>
+            </div>
+
+            <div
+                id="inventoryStatus"
+                class="workflow-status hidden"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+            <div id="inventoryList" class="inventory-results">
+                <p class="inventory-empty-state">
+                    Loading inventory...
+                </p>
+            </div>
         </div>
 
     </section>
@@ -827,7 +838,7 @@
             </div>
         </div>
 
-        <div class="workflow-card">
+        <div class="workflow-card search-controls">
 
             <label for="searchInput">
                 Search Inventory
@@ -840,6 +851,19 @@
                 autocomplete="off"
             >
 
+        </div>
+
+        <div
+            id="searchStatus"
+            class="workflow-status hidden"
+            role="status"
+            aria-live="polite"
+        ></div>
+
+        <div id="searchResults" class="inventory-results search-results">
+            <p class="inventory-empty-state">
+                Enter a title, edition, UPC, or tote to search inventory.
+            </p>
         </div>
 
     </section>
@@ -1502,11 +1526,12 @@
 <script src="./js/supabase-client.js"></script>
 <script src="./js/auth.js"></script>
 <script src="./js/barcode.js"></script>
-<script src="./js/release-editor.js?v=20260918-10"></script>
+<script src="./js/release-editor.js?v=20260918-11"></script>
 <script src="./js/totes.js?v=20260918-10"></script>
 <script src="./js/add-dvd.js?v=20260918-9"></script>
 <script src="./js/sold.js?v=20260918-6"></script>
 <script src="./js/users.js?v=20260918-7"></script>
+<script src="./js/inventory.js?v=20260918-11"></script>
 <script
     src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js"
     integrity="sha384-HRtzk9lZgkbSgvUyQrnfC/GxiXZgwaNyD7hC9wcXlsBpDhkS80ISl73juef2FRuf"

@@ -1756,3 +1756,125 @@ button:disabled {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ============================================================
+   Inventory and search results
+   ============================================================ */
+
+.inventory-panel {
+    border-top: 1px solid var(--border);
+}
+
+.inventory-panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.inventory-panel-heading .secondary-button {
+    margin-top: 0;
+}
+
+.inventory-summary,
+.inventory-empty-state {
+    margin: 0;
+    color: var(--muted);
+}
+
+.inventory-results {
+    border-top: 1px solid var(--border);
+}
+
+.inventory-result-header,
+.inventory-result-row {
+    display: grid;
+    grid-template-columns:
+        minmax(220px, 2fr)
+        minmax(120px, 0.85fr)
+        minmax(220px, 1.4fr)
+        72px;
+    gap: 1rem;
+    align-items: start;
+}
+
+.inventory-result-header {
+    padding: 0.75rem 1rem;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 750;
+    text-transform: uppercase;
+}
+
+.inventory-result-row {
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.inventory-result-title,
+.inventory-result-details,
+.inventory-result-upc,
+.inventory-location-code,
+.inventory-location-detail {
+    display: block;
+}
+
+.inventory-result-details,
+.inventory-result-upc,
+.inventory-location-detail {
+    margin-top: 0.25rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.inventory-result-upc,
+.inventory-location-code {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.inventory-location + .inventory-location {
+    margin-top: 0.65rem;
+}
+
+.inventory-result-quantity {
+    text-align: right;
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.inventory-empty-state {
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.search-controls {
+    max-width: none;
+}
+
+.search-results {
+    margin-top: 1.25rem;
+}
+
+@media (max-width: 760px) {
+    .inventory-result-header {
+        display: none;
+    }
+
+    .inventory-result-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.85rem 1rem;
+    }
+
+    .inventory-result-upc-cell,
+    .inventory-result-locations {
+        grid-column: 1 / -1;
+    }
+
+    .inventory-result-quantity {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}

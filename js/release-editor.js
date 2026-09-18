@@ -150,6 +150,10 @@
             if (callback) {
                 callback(data);
             }
+
+            window.dispatchEvent(
+                new CustomEvent("dvd-inventory-changed")
+            );
         }
         catch (error) {
             console.error("Failed to update DVD information:", error);
