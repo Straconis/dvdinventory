@@ -1368,6 +1368,15 @@ button:disabled {
     border-color: #64748b;
 }
 
+.user-action-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.user-action-button:disabled:hover {
+    border-color: var(--border);
+}
+
 .user-action-danger {
     border-color: #7f1d1d;
     color: #fecaca;

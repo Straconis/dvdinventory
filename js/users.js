@@ -90,12 +90,24 @@
         return element;
     }
 
-    function createUserActionButton(label, className, handler) {
+    function createUserActionButton(
+        label,
+        className,
+        handler,
+        options
+    ) {
+        const settings = options || {};
         const button = document.createElement("button");
 
         button.type = "button";
         button.className = className;
         button.textContent = label;
+        button.disabled = Boolean(settings.disabled);
+
+        if (settings.title) {
+            button.title = settings.title;
+        }
+
         button.addEventListener("click", handler);
         return button;
     }
@@ -269,6 +281,11 @@
             return;
         }
 
+        const activeAdministratorCount = users.filter(
+            (profile) =>
+                profile.role === "admin" && profile.active
+        ).length;
+
         for (const profile of users) {
             const card = document.createElement("article");
             const heading = document.createElement("div");
@@ -346,12 +363,18 @@
             }
             else {
                 const actions = document.createElement("div");
+                const isFinalActiveAdministrator =
+                    profile.role === "admin" &&
+                    profile.active &&
+                    activeAdministratorCount <= 1;
+                const finalAdministratorMessage =
+                    "The final active administrator cannot be demoted or deactivated.";
 
                 actions.className = "user-actions";
                 actions.append(
                     createUserActionButton(
                         profile.role === "admin"
-                            ? "Make User"
+                            ? "Demote to User"
                             : "Make Administrator",
                         "user-action-button",
                         () => {
@@ -371,6 +394,12 @@
                                     `${profile.username}'s role was updated.`
                                 );
                             }
+                        },
+                        {
+                            disabled: isFinalActiveAdministrator,
+                            title: isFinalActiveAdministrator
+                                ? finalAdministratorMessage
+                                : ""
                         }
                     ),
                     createUserActionButton(
@@ -393,6 +422,12 @@
                                     `${nextActive ? "reactivated" : "deactivated"}.`
                                 );
                             }
+                        },
+                        {
+                            disabled: isFinalActiveAdministrator,
+                            title: isFinalActiveAdministrator
+                                ? finalAdministratorMessage
+                                : ""
                         }
                     ),
                     createUserActionButton(
