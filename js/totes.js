@@ -44,6 +44,7 @@
         document.getElementById("archivedToteList");
 
     let loadingTotes = false;
+    let pendingToteReload = false;
     let creatingTote = false;
     const deletingToteIds = new Set();
     const archivingToteIds = new Set();
@@ -753,6 +754,7 @@
         const settings = options || {};
 
         if (loadingTotes) {
+            pendingToteReload = true;
             return;
         }
 
@@ -834,6 +836,15 @@
 
             if (refreshTotesButton) {
                 refreshTotesButton.disabled = false;
+            }
+
+            if (pendingToteReload) {
+                pendingToteReload = false;
+                window.setTimeout(() => {
+                    loadTotes({
+                        silent: true
+                    });
+                }, 0);
             }
         }
     }
@@ -1074,12 +1085,17 @@
     );
 
     window.addEventListener("dvd-totes-changed", () => {
+        renderTotes([]);
         loadTotes({
             silent: true
         });
     });
 
     window.DVD_TOTES = Object.freeze({
+        clear() {
+            renderTotes([]);
+            setStatus("", "info");
+        },
         load: loadTotes,
         normalizeCode: normalizeToteCode
     });

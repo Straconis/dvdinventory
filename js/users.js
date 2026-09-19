@@ -360,6 +360,14 @@
             );
 
             await loadUsers({ silent: true });
+
+            if (
+                window.DVD_TOTES &&
+                typeof window.DVD_TOTES.clear === "function"
+            ) {
+                window.DVD_TOTES.clear();
+            }
+
             window.dispatchEvent(
                 new CustomEvent("dvd-inventory-changed")
             );
