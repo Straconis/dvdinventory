@@ -1449,6 +1449,46 @@ button:disabled {
     font-size: 0.72rem;
 }
 
+.inventory-danger-zone {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.25rem;
+    align-items: center;
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid #7f1d1d;
+}
+
+.inventory-danger-zone h2 {
+    margin: 0.2rem 0 0.5rem;
+}
+
+.inventory-danger-zone p:not(.eyebrow) {
+    max-width: 720px;
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.inventory-danger-zone .danger-button {
+    margin-top: 0;
+}
+
+.inventory-danger-zone .workflow-status {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+
+.purge-dialog {
+    width: min(540px, calc(100% - 2rem));
+    border-color: #7f1d1d;
+}
+
+.purge-dialog .danger-button {
+    min-height: 42px;
+    margin-top: 0;
+}
+
 .password-dialog {
     width: min(460px, calc(100% - 2rem));
     padding: 1.5rem;
@@ -1512,6 +1552,14 @@ button:disabled {
 
     .user-action-button {
         flex: 1 1 140px;
+    }
+
+    .inventory-danger-zone {
+        grid-template-columns: 1fr;
+    }
+
+    .inventory-danger-zone .danger-button {
+        width: 100%;
     }
 }
 

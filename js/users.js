@@ -49,12 +49,29 @@
         document.getElementById("cancelOwnPasswordButton");
     const saveOwnPasswordButton =
         document.getElementById("saveOwnPasswordButton");
+    const openPurgeButton =
+        document.getElementById("openPurgeInventoryButton");
+    const purgeStatus =
+        document.getElementById("purgeInventoryStatus");
+    const purgeDialog =
+        document.getElementById("purgeInventoryDialog");
+    const purgeForm =
+        document.getElementById("purgeInventoryForm");
+    const purgeConfirmationInput =
+        document.getElementById("purgeInventoryConfirmation");
+    const purgeDialogStatus =
+        document.getElementById("purgeInventoryDialogStatus");
+    const cancelPurgeButton =
+        document.getElementById("cancelPurgeInventoryButton");
+    const confirmPurgeButton =
+        document.getElementById("confirmPurgeInventoryButton");
 
     let currentProfile = null;
     let users = [];
     let loadingUsers = false;
     let creatingUser = false;
     let resetTarget = null;
+    let purgingInventory = false;
 
     function setStatus(message, type) {
         if (!status) {
@@ -75,6 +92,44 @@
         }
 
         status.classList.add(
+            `workflow-status-${type || "info"}`
+        );
+    }
+
+    function setPurgeStatus(message, type) {
+        purgeStatus.textContent = message || "";
+        purgeStatus.classList.remove(
+            "hidden",
+            "workflow-status-success",
+            "workflow-status-error",
+            "workflow-status-info"
+        );
+
+        if (!message) {
+            purgeStatus.classList.add("hidden");
+            return;
+        }
+
+        purgeStatus.classList.add(
+            `workflow-status-${type || "info"}`
+        );
+    }
+
+    function setPurgeDialogStatus(message, type) {
+        purgeDialogStatus.textContent = message || "";
+        purgeDialogStatus.classList.remove(
+            "hidden",
+            "workflow-status-success",
+            "workflow-status-error",
+            "workflow-status-info"
+        );
+
+        if (!message) {
+            purgeDialogStatus.classList.add("hidden");
+            return;
+        }
+
+        purgeDialogStatus.classList.add(
             `workflow-status-${type || "info"}`
         );
     }
@@ -130,7 +185,8 @@
             user_deactivated: "deactivated the account",
             role_changed: `changed the role from ${audit.old_value} to ${audit.new_value}`,
             password_reset_requested: "set a temporary password",
-            password_changed: "changed the password"
+            password_changed: "changed the password",
+            inventory_purged: "purged all inventory data and history"
         };
 
         return labels[audit.action] || audit.action.replaceAll("_", " ");
@@ -193,7 +249,9 @@
             summary.append(
                 createTextElement("strong", "", actor),
                 document.createTextNode(
-                    ` ${describeAuditAction(audit)} for ${target}.`
+                    audit.action === "inventory_purged"
+                        ? ` ${describeAuditAction(audit)}.`
+                        : ` ${describeAuditAction(audit)} for ${target}.`
                 )
             );
             item.append(
@@ -228,6 +286,102 @@
         clearOwnPasswordInputs();
         ownPasswordDialog.showModal();
         window.setTimeout(() => currentAccountPassword.focus(), 0);
+    }
+
+    function openPurgeDialog() {
+        purgeConfirmationInput.value = "";
+        confirmPurgeButton.disabled = true;
+        setPurgeStatus("");
+        setPurgeDialogStatus("");
+        purgeDialog.showModal();
+        window.setTimeout(() => purgeConfirmationInput.focus(), 0);
+    }
+
+    async function purgeInventory(event) {
+        event.preventDefault();
+
+        if (purgingInventory) {
+            return;
+        }
+
+        const confirmation = String(
+            purgeConfirmationInput.value || ""
+        ).trim();
+
+        if (confirmation !== "PURGE INVENTORY") {
+            confirmPurgeButton.disabled = true;
+            return;
+        }
+
+        const finalConfirmation = window.confirm(
+            "Final confirmation: permanently remove ALL inventory data " +
+            "and history?\n\nUser accounts will remain intact."
+        );
+
+        if (!finalConfirmation) {
+            return;
+        }
+
+        purgingInventory = true;
+        confirmPurgeButton.disabled = true;
+        confirmPurgeButton.textContent = "Purging...";
+        setPurgeDialogStatus(
+            "Permanently removing inventory data...",
+            "info"
+        );
+
+        try {
+            const { data, error } = await supabase.rpc(
+                "admin_purge_inventory_data",
+                {
+                    p_confirmation: confirmation
+                }
+            );
+
+            if (error) {
+                throw error;
+            }
+
+            purgeDialog.close();
+            purgeConfirmationInput.value = "";
+
+            const toteCount = Number(data && data.totes) || 0;
+            const releaseCount =
+                Number(data && data.physical_releases) || 0;
+            const transactionCount =
+                Number(data && data.transactions) || 0;
+
+            setPurgeStatus(
+                `Inventory purge complete: ${toteCount} totes, ` +
+                    `${releaseCount} DVD releases, and ` +
+                    `${transactionCount} transactions removed. ` +
+                    "User accounts were preserved.",
+                "success"
+            );
+
+            await loadUsers({ silent: true });
+            window.dispatchEvent(
+                new CustomEvent("dvd-inventory-changed")
+            );
+            window.dispatchEvent(
+                new CustomEvent("dvd-totes-changed")
+            );
+        }
+        catch (error) {
+            console.error("Failed to purge inventory data:", error);
+            setPurgeDialogStatus(
+                error && error.message
+                    ? error.message
+                    : "Could not purge inventory data.",
+                "error"
+            );
+        }
+        finally {
+            purgingInventory = false;
+            confirmPurgeButton.textContent = "Permanently Purge";
+            confirmPurgeButton.disabled =
+                purgeConfirmationInput.value.trim() !== "PURGE INVENTORY";
+        }
     }
 
     async function updateUser(profile, changes, successMessage) {
@@ -784,6 +938,28 @@
         cancelOwnPasswordButton.addEventListener("click", () => {
             clearOwnPasswordInputs();
             ownPasswordDialog.close();
+        });
+    }
+
+    if (openPurgeButton) {
+        openPurgeButton.addEventListener("click", openPurgeDialog);
+    }
+
+    if (purgeConfirmationInput) {
+        purgeConfirmationInput.addEventListener("input", () => {
+            confirmPurgeButton.disabled =
+                purgeConfirmationInput.value.trim() !== "PURGE INVENTORY";
+        });
+    }
+
+    if (purgeForm) {
+        purgeForm.addEventListener("submit", purgeInventory);
+    }
+
+    if (cancelPurgeButton) {
+        cancelPurgeButton.addEventListener("click", () => {
+            purgeConfirmationInput.value = "";
+            purgeDialog.close();
         });
     }
 })();

@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="./css/app.css?v=20260918-14"
+        href="./css/app.css?v=20260918-15"
     >
 </head>
 
@@ -634,6 +634,31 @@
             </div>
         </div>
 
+        <div class="inventory-danger-zone">
+            <div>
+                <p class="eyebrow">INVENTORY RESET</p>
+                <h2>Purge Inventory Data</h2>
+                <p>
+                    Remove all totes, DVDs, quantities, checkouts, check-ins,
+                    metadata, and inventory history. User accounts and user
+                    administration history remain intact.
+                </p>
+            </div>
+
+            <button
+                id="openPurgeInventoryButton"
+                class="danger-button"
+                type="button"
+            >Purge Inventory Data</button>
+
+            <div
+                id="purgeInventoryStatus"
+                class="workflow-status hidden"
+                role="status"
+                aria-live="polite"
+            ></div>
+        </div>
+
         <dialog id="temporaryPasswordDialog" class="password-dialog">
             <form id="temporaryPasswordForm" method="dialog">
                 <h2>Set Temporary Password</h2>
@@ -721,6 +746,55 @@
                         class="primary-button"
                         type="submit"
                     >Change Password</button>
+                </div>
+            </form>
+        </dialog>
+
+        <dialog id="purgeInventoryDialog" class="password-dialog purge-dialog">
+            <form id="purgeInventoryForm" method="dialog">
+                <h2>Permanently Purge Inventory?</h2>
+                <p>
+                    This cannot be undone. Every tote, DVD, quantity,
+                    checkout, check-in, and inventory transaction will be
+                    permanently removed.
+                </p>
+
+                <p class="helper-text">
+                    User accounts, roles, passwords, and user administration
+                    history will not be removed.
+                </p>
+
+                <label for="purgeInventoryConfirmation">
+                    Type PURGE INVENTORY to continue
+                </label>
+                <input
+                    id="purgeInventoryConfirmation"
+                    type="text"
+                    autocomplete="off"
+                    spellcheck="false"
+                    required
+                >
+
+                <div
+                    id="purgeInventoryDialogStatus"
+                    class="workflow-status hidden"
+                    role="status"
+                    aria-live="polite"
+                ></div>
+
+                <div class="dialog-actions">
+                    <button
+                        id="cancelPurgeInventoryButton"
+                        class="secondary-button"
+                        type="button"
+                    >Cancel</button>
+
+                    <button
+                        id="confirmPurgeInventoryButton"
+                        class="danger-button"
+                        type="submit"
+                        disabled
+                    >Permanently Purge</button>
                 </div>
             </form>
         </dialog>
@@ -1695,7 +1769,7 @@
 <script src="./js/add-dvd.js?v=20260918-9"></script>
 <script src="./js/sold.js?v=20260918-12"></script>
 <script src="./js/checkout.js?v=20260918-14"></script>
-<script src="./js/users.js?v=20260918-7"></script>
+<script src="./js/users.js?v=20260918-15"></script>
 <script src="./js/inventory.js?v=20260918-12"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="./js/export.js?v=20260918-14"></script>

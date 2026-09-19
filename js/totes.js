@@ -1073,6 +1073,12 @@
         }
     );
 
+    window.addEventListener("dvd-totes-changed", () => {
+        loadTotes({
+            silent: true
+        });
+    });
+
     window.DVD_TOTES = Object.freeze({
         load: loadTotes,
         normalizeCode: normalizeToteCode
