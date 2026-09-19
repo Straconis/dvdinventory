@@ -1978,3 +1978,87 @@ button:disabled {
         grid-row: 1;
     }
 }
+
+/* ============================================================
+   UPC enrichment administration
+   ============================================================ */
+
+.enrichment-panel {
+    margin-top: 1.25rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+}
+
+.enrichment-panel .panel-heading {
+    align-items: flex-start;
+}
+
+.enrichment-panel .helper-text {
+    max-width: 48rem;
+    margin-bottom: 0;
+}
+
+.enrichment-list {
+    margin-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.enrichment-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.5fr) minmax(110px, 0.7fr) auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.enrichment-row:last-child {
+    border-bottom: 0;
+}
+
+.enrichment-title,
+.enrichment-upc,
+.enrichment-error {
+    display: block;
+}
+
+.enrichment-upc,
+.enrichment-error,
+.enrichment-detail {
+    margin-top: 0.25rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.enrichment-upc {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.enrichment-error {
+    color: #fecaca;
+}
+
+.enrichment-state {
+    text-transform: capitalize;
+}
+
+.enrichment-row .secondary-button {
+    margin-top: 0;
+}
+
+@media (max-width: 640px) {
+    .enrichment-panel {
+        padding: 1rem;
+    }
+
+    .enrichment-row {
+        grid-template-columns: 1fr;
+    }
+
+    .enrichment-row .secondary-button {
+        width: 100%;
+    }
+}

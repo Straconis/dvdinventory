@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="./css/app.css?v=20260918-15"
+        href="./css/app.css?v=20260918-17"
     >
 </head>
 
@@ -631,6 +631,36 @@
 
             <div id="userAuditList" class="audit-list">
                 <p class="user-empty-state">Loading history...</p>
+            </div>
+        </div>
+
+        <div class="enrichment-panel">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">DVD METADATA</p>
+                    <h2>UPC Enrichment</h2>
+                    <p class="helper-text">
+                        New DVDs are looked up automatically. Review failed
+                        or incomplete lookups here and retry them when needed.
+                    </p>
+                </div>
+
+                <button
+                    id="refreshEnrichmentButton"
+                    class="secondary-button"
+                    type="button"
+                >Refresh</button>
+            </div>
+
+            <div
+                id="enrichmentStatus"
+                class="workflow-status hidden"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+            <div id="enrichmentList" class="enrichment-list">
+                <p class="user-empty-state">Loading lookup activity...</p>
             </div>
         </div>
 
@@ -1766,7 +1796,8 @@
 <script src="./js/release-editor.js?v=20260918-12"></script>
 <script src="./js/tote-editor.js?v=20260918-12"></script>
 <script src="./js/totes.js?v=20260918-16"></script>
-<script src="./js/add-dvd.js?v=20260918-9"></script>
+<script src="./js/enrichment.js?v=20260918-17"></script>
+<script src="./js/add-dvd.js?v=20260918-17"></script>
 <script src="./js/sold.js?v=20260918-12"></script>
 <script src="./js/checkout.js?v=20260918-14"></script>
 <script src="./js/users.js?v=20260918-16"></script>

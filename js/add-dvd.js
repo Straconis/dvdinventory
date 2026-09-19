@@ -76,9 +76,9 @@
             return;
         }
 
-        if (!/^\d{8,14}$/.test(upc)) {
+        if (!/^(?:\d{8}|\d{12,14})$/.test(upc)) {
             setStatus(
-                "Enter a valid 8- to 14-digit DVD barcode.",
+                "Enter an 8, 12, 13, or 14-digit barcode. Include the small digits at both ends of a UPC.",
                 "error"
             );
             upcInput.focus();
@@ -91,7 +91,7 @@
         setStatus("Adding DVD to inventory...", "info");
 
         try {
-            const { error } = await supabase.rpc(
+            const { data, error } = await supabase.rpc(
                 "add_inventory_by_codes",
                 {
                     p_tote_code: toteCode,
@@ -105,16 +105,60 @@
                 throw error;
             }
 
-            upcInput.value = "";
-            setStatus(
-                `Added UPC ${upc} to ${toteCode}. Scan the next DVD.`,
-                "success"
-            );
-            upcInput.focus();
-
             window.dispatchEvent(
                 new CustomEvent("dvd-inventory-changed")
             );
+
+            const inventoryRecord = Array.isArray(data) ? data[0] : data;
+            const releaseId = inventoryRecord &&
+                inventoryRecord.physical_release_id;
+            let lookupResult = null;
+
+            if (
+                releaseId &&
+                window.DVD_ENRICHMENT &&
+                typeof window.DVD_ENRICHMENT.lookupRelease === "function"
+            ) {
+                setStatus(
+                    `Added UPC ${upc}. Looking up DVD information...`,
+                    "info"
+                );
+                lookupResult = await window.DVD_ENRICHMENT.lookupRelease(
+                    releaseId
+                );
+            }
+
+            upcInput.value = "";
+
+            if (lookupResult && lookupResult.status === "completed") {
+                const title = lookupResult.release &&
+                    lookupResult.release.release_title;
+
+                setStatus(
+                    `Added ${title || `UPC ${upc}`} to ${toteCode}. Scan the next DVD.`,
+                    "success"
+                );
+            }
+            else if (lookupResult && lookupResult.status === "not_found") {
+                setStatus(
+                    `Added UPC ${upc} to ${toteCode}. No title was found; use Edit DVD Info or retry it from Users.`,
+                    "success"
+                );
+            }
+            else if (lookupResult && lookupResult.status === "failed") {
+                setStatus(
+                    `Added UPC ${upc} to ${toteCode}. The information lookup is queued for administrator review.`,
+                    "success"
+                );
+            }
+            else {
+                setStatus(
+                    `Added UPC ${upc} to ${toteCode}. Scan the next DVD.`,
+                    "success"
+                );
+            }
+
+            upcInput.focus();
         }
         catch (error) {
             console.error("Failed to add DVD:", error);
