@@ -211,7 +211,7 @@
         <button type="button" data-page="export">Export</button>
         <button
             id="usersNavigationButton"
-            class="admin-only hidden"
+            class="hidden"
             data-page="users"
             type="button"
         >Users</button>
@@ -521,14 +521,16 @@
 
     <section
         id="users"
-        class="page admin-only hidden"
+        class="page hidden"
     >
 
         <div class="page-heading">
             <div>
-                <p class="eyebrow">ADMINISTRATION</p>
-                <h1>User Management</h1>
-                <p>
+                <p id="usersPageEyebrow" class="eyebrow">
+                    ADMINISTRATION
+                </p>
+                <h1 id="usersPageTitle">User Management</h1>
+                <p id="usersPageDescription">
                     Create accounts, manage access, and review
                     administrative history.
                 </p>
@@ -545,7 +547,7 @@
         <div class="user-management-layout">
             <form
                 id="createUserForm"
-                class="workflow-card user-create-card"
+                class="workflow-card user-create-card admin-only"
                 autocomplete="off"
             >
                 <h2>Create User</h2>
@@ -621,7 +623,7 @@
             </div>
         </div>
 
-        <div class="audit-panel">
+        <div class="audit-panel admin-only">
             <div class="panel-heading">
                 <div>
                     <p class="eyebrow">ACCOUNT HISTORY</p>
@@ -634,7 +636,7 @@
             </div>
         </div>
 
-        <div class="enrichment-panel">
+        <div class="enrichment-panel admin-only">
             <div class="panel-heading">
                 <div>
                     <p class="eyebrow">DVD METADATA</p>
@@ -664,7 +666,7 @@
             </div>
         </div>
 
-        <div class="inventory-danger-zone">
+        <div class="inventory-danger-zone admin-only">
             <div>
                 <p class="eyebrow">INVENTORY RESET</p>
                 <h2>Purge Inventory Data</h2>
@@ -776,6 +778,60 @@
                         class="primary-button"
                         type="submit"
                     >Change Password</button>
+                </div>
+            </form>
+        </dialog>
+
+        <dialog id="changeOwnEmailDialog" class="password-dialog">
+            <form id="changeOwnEmailForm" method="dialog">
+                <h2>Change My Email</h2>
+                <p>
+                    Verify your current password, then enter the new email
+                    address for this account.
+                </p>
+
+                <label for="currentEmailPassword">
+                    Current Password
+                </label>
+                <input
+                    id="currentEmailPassword"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <label for="newAccountEmail">
+                    New Email
+                </label>
+                <input
+                    id="newAccountEmail"
+                    type="email"
+                    autocomplete="email"
+                    required
+                >
+
+                <label for="confirmAccountEmail">
+                    Confirm New Email
+                </label>
+                <input
+                    id="confirmAccountEmail"
+                    type="email"
+                    autocomplete="email"
+                    required
+                >
+
+                <div class="dialog-actions">
+                    <button
+                        id="cancelOwnEmailButton"
+                        class="secondary-button"
+                        type="button"
+                    >Cancel</button>
+
+                    <button
+                        id="saveOwnEmailButton"
+                        class="primary-button"
+                        type="submit"
+                    >Change Email</button>
                 </div>
             </form>
         </dialog>
@@ -1800,7 +1856,7 @@
 <script src="./js/add-dvd.js?v=20260918-17"></script>
 <script src="./js/sold.js?v=20260918-12"></script>
 <script src="./js/checkout.js?v=20260918-14"></script>
-<script src="./js/users.js?v=20260918-16"></script>
+<script src="./js/users.js?v=20260920-01"></script>
 <script src="./js/inventory.js?v=20260918-12"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="./js/export.js?v=20260918-14"></script>

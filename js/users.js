@@ -11,6 +11,12 @@
     const navigationButton =
         document.getElementById("usersNavigationButton");
     const usersPage = document.getElementById("users");
+    const usersPageEyebrow =
+        document.getElementById("usersPageEyebrow");
+    const usersPageTitle =
+        document.getElementById("usersPageTitle");
+    const usersPageDescription =
+        document.getElementById("usersPageDescription");
     const status = document.getElementById("userManagementStatus");
     const createForm = document.getElementById("createUserForm");
     const usernameInput = document.getElementById("newUserUsername");
@@ -23,6 +29,11 @@
     const refreshButton = document.getElementById("refreshUsersButton");
     const userList = document.getElementById("userList");
     const auditList = document.getElementById("userAuditList");
+    const adminOnlyElements = Array.from(
+        usersPage
+            ? usersPage.querySelectorAll(".admin-only")
+            : []
+    );
     const passwordDialog =
         document.getElementById("temporaryPasswordDialog");
     const passwordForm =
@@ -49,6 +60,20 @@
         document.getElementById("cancelOwnPasswordButton");
     const saveOwnPasswordButton =
         document.getElementById("saveOwnPasswordButton");
+    const ownEmailDialog =
+        document.getElementById("changeOwnEmailDialog");
+    const ownEmailForm =
+        document.getElementById("changeOwnEmailForm");
+    const currentEmailPassword =
+        document.getElementById("currentEmailPassword");
+    const newAccountEmail =
+        document.getElementById("newAccountEmail");
+    const confirmAccountEmail =
+        document.getElementById("confirmAccountEmail");
+    const cancelOwnEmailButton =
+        document.getElementById("cancelOwnEmailButton");
+    const saveOwnEmailButton =
+        document.getElementById("saveOwnEmailButton");
     const openPurgeButton =
         document.getElementById("openPurgeInventoryButton");
     const purgeStatus =
@@ -282,10 +307,33 @@
         confirmAccountPassword.value = "";
     }
 
+    function clearOwnEmailInputs() {
+        currentEmailPassword.value = "";
+        newAccountEmail.value = "";
+        confirmAccountEmail.value = "";
+    }
+
     function openOwnPasswordDialog() {
         clearOwnPasswordInputs();
         ownPasswordDialog.showModal();
         window.setTimeout(() => currentAccountPassword.focus(), 0);
+    }
+
+    function openOwnEmailDialog() {
+        clearOwnEmailInputs();
+
+        const session =
+            window.DVD_AUTH && window.DVD_AUTH.getSession();
+
+        newAccountEmail.value =
+            session && session.user && session.user.email
+                ? session.user.email
+                : currentProfile && currentProfile.contact_email
+                    ? currentProfile.contact_email
+                    : "";
+        confirmAccountEmail.value = newAccountEmail.value;
+        ownEmailDialog.showModal();
+        window.setTimeout(() => newAccountEmail.focus(), 0);
     }
 
     function openPurgeDialog() {
@@ -521,6 +569,13 @@
                         openOwnPasswordDialog
                     )
                 );
+                currentAccountActions.appendChild(
+                    createUserActionButton(
+                        "Change My Email",
+                        "user-action-button",
+                        openOwnEmailDialog
+                    )
+                );
                 card.appendChild(currentAccountActions);
             }
             else {
@@ -608,7 +663,7 @@
     async function loadUsers(options) {
         const settings = options || {};
 
-        if (loadingUsers || !currentProfile || currentProfile.role !== "admin") {
+        if (loadingUsers || !currentProfile) {
             return;
         }
 
@@ -620,38 +675,54 @@
         }
 
         try {
-            const [profilesResult, auditResult] = await Promise.all([
-                supabase
-                    .from("profiles")
-                    .select(
-                        "id, username, display_name, contact_email, role, active, must_change_password, created_at, updated_at"
-                    )
-                    .order("username", { ascending: true }),
-                supabase
-                    .from("user_admin_audit")
-                    .select(
-                        "id, target_user_id, target_username, action, old_value, new_value, performed_by, created_at"
-                    )
-                    .order("created_at", { ascending: false })
-                    .limit(25)
-            ]);
+            const isAdmin = currentProfile.role === "admin";
+            const profileQuery = supabase
+                .from("profiles")
+                .select(
+                    "id, username, display_name, contact_email, role, active, must_change_password, created_at, updated_at"
+                )
+                .order("username", { ascending: true });
+
+            if (!isAdmin) {
+                profileQuery.eq("id", currentProfile.id);
+            }
+
+            const profilesResult = await profileQuery;
+            let auditRows = [];
 
             if (profilesResult.error) {
                 throw profilesResult.error;
             }
 
-            if (auditResult.error) {
-                throw auditResult.error;
+            if (isAdmin) {
+                const auditResult = await supabase
+                    .from("user_admin_audit")
+                    .select(
+                        "id, target_user_id, target_username, action, old_value, new_value, performed_by, created_at"
+                    )
+                    .order("created_at", { ascending: false })
+                    .limit(25);
+
+                if (auditResult.error) {
+                    throw auditResult.error;
+                }
+
+                auditRows = auditResult.data || [];
             }
 
             users = profilesResult.data || [];
             renderUsers();
-            renderAudit(auditResult.data || []);
+
+            if (isAdmin) {
+                renderAudit(auditRows);
+            }
 
             if (!settings.silent) {
                 setStatus(
                     users.length === 1
-                        ? "Loaded 1 user."
+                        ? isAdmin
+                            ? "Loaded 1 user."
+                            : "Loaded your account."
                         : `Loaded ${users.length} users.`,
                     "success"
                 );
@@ -660,7 +731,7 @@
         catch (error) {
             console.error("Failed to load user management:", error);
             setStatus(
-                "Could not load user management. Check your administrator access.",
+                "Could not load account information.",
                 "error"
             );
         }
@@ -876,18 +947,146 @@
         }
     }
 
+    async function changeOwnEmail(event) {
+        event.preventDefault();
+
+        const currentPassword = currentEmailPassword.value;
+        const nextEmail = newAccountEmail.value.trim();
+        const confirmation = confirmAccountEmail.value.trim();
+
+        if (!/^\S+@\S+\.\S+$/.test(nextEmail)) {
+            setStatus("Enter a valid email address.", "error");
+            return;
+        }
+
+        if (nextEmail.toLowerCase() !== confirmation.toLowerCase()) {
+            setStatus("The new email addresses do not match.", "error");
+            return;
+        }
+
+        const session =
+            window.DVD_AUTH && window.DVD_AUTH.getSession();
+        const currentEmail =
+            session && session.user ? session.user.email : "";
+
+        if (!currentEmail) {
+            setStatus(
+                "Could not verify the signed-in account.",
+                "error"
+            );
+            return;
+        }
+
+        if (nextEmail.toLowerCase() === currentEmail.toLowerCase()) {
+            setStatus(
+                "Enter a new email address that differs from the current email.",
+                "error"
+            );
+            return;
+        }
+
+        saveOwnEmailButton.disabled = true;
+        saveOwnEmailButton.textContent = "Changing...";
+
+        try {
+            const { error: signInError } =
+                await supabase.auth.signInWithPassword({
+                    email: currentEmail,
+                    password: currentPassword
+                });
+
+            if (signInError) {
+                throw new Error("The current password is incorrect.");
+            }
+
+            const { error: updateAuthError } =
+                await supabase.auth.updateUser({
+                    email: nextEmail
+                });
+
+            if (updateAuthError) {
+                throw updateAuthError;
+            }
+
+            const { data: updatedProfile, error: profileError } =
+                await supabase.rpc(
+                    "update_own_contact_email",
+                    {
+                        new_contact_email: nextEmail
+                    }
+                );
+
+            if (profileError) {
+                throw profileError;
+            }
+
+            if (updatedProfile) {
+                currentProfile = Array.isArray(updatedProfile)
+                    ? updatedProfile[0] || currentProfile
+                    : updatedProfile;
+            }
+
+            clearOwnEmailInputs();
+            ownEmailDialog.close();
+            await loadUsers({ silent: true });
+            setStatus(
+                "Your email update was saved. Check your inbox if confirmation is required.",
+                "success"
+            );
+        }
+        catch (error) {
+            console.error("Failed to change current email:", error);
+            setStatus(
+                error && error.message
+                    ? error.message
+                    : "Could not change your email.",
+                "error"
+            );
+        }
+        finally {
+            saveOwnEmailButton.disabled = false;
+            saveOwnEmailButton.textContent = "Change Email";
+        }
+    }
+
     function initializeForProfile(profile) {
         currentProfile = profile || null;
+        const isActiveUser = Boolean(
+            currentProfile &&
+            currentProfile.active
+        );
         const isAdmin = Boolean(
             currentProfile &&
             currentProfile.active &&
             currentProfile.role === "admin"
         );
 
-        navigationButton.classList.toggle("hidden", !isAdmin);
-        usersPage.classList.toggle("hidden", !isAdmin);
+        navigationButton.classList.toggle("hidden", !isActiveUser);
+        usersPage.classList.toggle("hidden", !isActiveUser);
 
-        if (!isAdmin) {
+        for (const element of adminOnlyElements) {
+            element.classList.toggle("hidden", !isAdmin);
+        }
+
+        if (usersPageEyebrow) {
+            usersPageEyebrow.textContent = isAdmin
+                ? "ADMINISTRATION"
+                : "ACCOUNT";
+        }
+
+        if (usersPageTitle) {
+            usersPageTitle.textContent = isAdmin
+                ? "User Management"
+                : "My Account";
+        }
+
+        if (usersPageDescription) {
+            usersPageDescription.textContent = isAdmin
+                ? "Create accounts, manage access, and review administrative history."
+                : "Review your account details and update your password or email address.";
+        }
+
+        if (!isActiveUser) {
             if (window.location.hash === "#users") {
                 const dashboardButton = document.querySelector(
                     '[data-page="dashboard"]'
@@ -935,6 +1134,13 @@
         );
     }
 
+    if (ownEmailForm) {
+        ownEmailForm.addEventListener(
+            "submit",
+            changeOwnEmail
+        );
+    }
+
     if (cancelPasswordButton) {
         cancelPasswordButton.addEventListener("click", () => {
             passwordDialog.close();
@@ -946,6 +1152,13 @@
         cancelOwnPasswordButton.addEventListener("click", () => {
             clearOwnPasswordInputs();
             ownPasswordDialog.close();
+        });
+    }
+
+    if (cancelOwnEmailButton) {
+        cancelOwnEmailButton.addEventListener("click", () => {
+            clearOwnEmailInputs();
+            ownEmailDialog.close();
         });
     }
 
