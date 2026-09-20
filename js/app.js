@@ -5,6 +5,16 @@ const pageButtons = document.querySelectorAll("[data-page]");
 
 const navigation = document.getElementById("mainNavigation");
 const menuButton = document.getElementById("menuButton");
+const copyrightYear = document.getElementById("copyrightYear");
+
+if (copyrightYear) {
+    const firstYear = 2026;
+    const currentYear = new Date().getFullYear();
+
+    copyrightYear.textContent = currentYear > firstYear
+        ? `© ${firstYear}–${currentYear}`
+        : `© ${firstYear}`;
+}
 
 
 function showPage(pageName) {
