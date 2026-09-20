@@ -1398,6 +1398,77 @@ button:disabled {
     opacity: 0.5;
 }
 
+.user-password-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 38px;
+    padding: 0.45rem 0.7rem;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--panel-hover);
+    color: var(--text);
+
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.user-password-toggle input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.user-password-toggle-control {
+    position: relative;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 20px;
+
+    border: 1px solid #64748b;
+    border-radius: 10px;
+
+    background: #334155;
+    transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.user-password-toggle-control::after {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+
+    border-radius: 50%;
+
+    background: #f8fafc;
+    content: "";
+    transition: transform 150ms ease;
+}
+
+.user-password-toggle input:checked + .user-password-toggle-control {
+    border-color: #dc2626;
+    background: #991b1b;
+}
+
+.user-password-toggle input:checked + .user-password-toggle-control::after {
+    transform: translateX(16px);
+}
+
+.user-password-toggle input:focus-visible + .user-password-toggle-control {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.user-password-toggle:has(input:disabled) {
+    cursor: wait;
+    opacity: 0.65;
+}
+
 .user-action-button:disabled:hover {
     border-color: var(--border);
 }
@@ -1552,6 +1623,11 @@ button:disabled {
 
     .user-action-button {
         flex: 1 1 140px;
+    }
+
+    .user-password-toggle {
+        flex: 1 1 100%;
+        justify-content: space-between;
     }
 
     .inventory-danger-zone {

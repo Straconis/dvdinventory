@@ -207,6 +207,34 @@
         return button;
     }
 
+    function createPasswordResetToggle(profile) {
+        const label = document.createElement("label");
+        const text = createTextElement(
+            "span",
+            "user-password-toggle-label",
+            "Password reset required"
+        );
+        const input = document.createElement("input");
+        const control = document.createElement("span");
+
+        label.className = "user-password-toggle";
+        input.type = "checkbox";
+        input.checked = Boolean(profile.must_change_password);
+        input.setAttribute("role", "switch");
+        input.setAttribute(
+            "aria-label",
+            `Password reset required for ${profile.username}`
+        );
+        control.className = "user-password-toggle-control";
+
+        input.addEventListener("change", () => {
+            setPasswordResetRequired(profile, input.checked, input);
+        });
+
+        label.append(text, input, control);
+        return label;
+    }
+
     function formatDate(value) {
         if (!value) {
             return "Unknown time";
@@ -685,15 +713,9 @@
                         "Change Email",
                         "user-action-button",
                         () => openUserEmailDialog(profile)
-                    ),
-                    createUserActionButton(
-                        profile.must_change_password
-                            ? "Clear Password Reset"
-                            : "Require Password Reset",
-                        "user-action-button",
-                        () => setPasswordResetRequired(profile)
                     )
                 );
+                actions.appendChild(createPasswordResetToggle(profile));
                 card.appendChild(actions);
             }
 
@@ -979,9 +1001,8 @@
         }
     }
 
-    async function setPasswordResetRequired(profile) {
-        const required = !profile.must_change_password;
-
+    async function setPasswordResetRequired(profile, required, input) {
+        input.disabled = true;
         try {
             setStatus(`Updating ${profile.username}...`, "info");
 
@@ -1013,6 +1034,7 @@
             );
         }
         catch (error) {
+            input.checked = Boolean(profile.must_change_password);
             console.error(
                 "Failed to update password reset requirement:",
                 error
@@ -1024,6 +1046,9 @@
                 ),
                 "error"
             );
+        }
+        finally {
+            input.disabled = false;
         }
     }
 
