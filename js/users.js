@@ -11,6 +11,10 @@
     const navigationButton =
         document.getElementById("usersNavigationButton");
     const usersPage = document.getElementById("users");
+    const administrationNavigationButton =
+        document.getElementById("administrationNavigationButton");
+    const administrationPage =
+        document.getElementById("administration");
     const usersPageEyebrow =
         document.getElementById("usersPageEyebrow");
     const usersPageTitle =
@@ -30,9 +34,7 @@
     const userList = document.getElementById("userList");
     const auditList = document.getElementById("userAuditList");
     const adminOnlyElements = Array.from(
-        usersPage
-            ? usersPage.querySelectorAll(".admin-only")
-            : []
+        document.querySelectorAll(".admin-only")
     );
     const passwordDialog =
         document.getElementById("temporaryPasswordDialog");
@@ -1254,15 +1256,18 @@
 
         navigationButton.classList.toggle("hidden", !isActiveUser);
         usersPage.classList.toggle("hidden", !isActiveUser);
+        administrationNavigationButton.classList.toggle(
+            "hidden",
+            !isAdmin
+        );
+        administrationPage.classList.toggle("hidden", !isAdmin);
 
         for (const element of adminOnlyElements) {
             element.classList.toggle("hidden", !isAdmin);
         }
 
         if (usersPageEyebrow) {
-            usersPageEyebrow.textContent = isAdmin
-                ? "ADMINISTRATION"
-                : "ACCOUNT";
+            usersPageEyebrow.textContent = isAdmin ? "ACCOUNTS" : "ACCOUNT";
         }
 
         if (usersPageTitle) {
@@ -1273,7 +1278,7 @@
 
         if (usersPageDescription) {
             usersPageDescription.textContent = isAdmin
-                ? "Create accounts, manage access, and review administrative history."
+                ? "Create accounts and manage user access."
                 : "Review your account details and update your password or email address.";
         }
 
@@ -1288,6 +1293,19 @@
                 }
             }
             return;
+        }
+
+        if (
+            !isAdmin &&
+            window.location.hash === "#administration"
+        ) {
+            const dashboardButton = document.querySelector(
+                '[data-page="dashboard"]'
+            );
+
+            if (dashboardButton) {
+                dashboardButton.click();
+            }
         }
 
         loadUsers({ silent: true });
