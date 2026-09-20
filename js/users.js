@@ -74,6 +74,20 @@
         document.getElementById("cancelOwnEmailButton");
     const saveOwnEmailButton =
         document.getElementById("saveOwnEmailButton");
+    const userEmailDialog =
+        document.getElementById("changeUserEmailDialog");
+    const userEmailForm =
+        document.getElementById("changeUserEmailForm");
+    const userEmailUser =
+        document.getElementById("changeUserEmailUser");
+    const adminNewUserEmail =
+        document.getElementById("adminNewUserEmail");
+    const adminConfirmUserEmail =
+        document.getElementById("adminConfirmUserEmail");
+    const cancelUserEmailButton =
+        document.getElementById("cancelUserEmailButton");
+    const saveUserEmailButton =
+        document.getElementById("saveUserEmailButton");
     const openPurgeButton =
         document.getElementById("openPurgeInventoryButton");
     const purgeStatus =
@@ -96,6 +110,7 @@
     let loadingUsers = false;
     let creatingUser = false;
     let resetTarget = null;
+    let emailTarget = null;
     let purgingInventory = false;
 
     function setStatus(message, type) {
@@ -210,7 +225,10 @@
             user_deactivated: "deactivated the account",
             role_changed: `changed the role from ${audit.old_value} to ${audit.new_value}`,
             password_reset_requested: "set a temporary password",
+            password_reset_required: "required a password reset",
+            password_reset_cleared: "cleared the password reset requirement",
             password_changed: "changed the password",
+            email_changed: `changed the email from ${audit.old_value} to ${audit.new_value}`,
             inventory_purged: "purged all inventory data and history"
         };
 
@@ -299,6 +317,17 @@
         resetPasswordInput.value = "";
         passwordDialog.showModal();
         window.setTimeout(() => resetPasswordInput.focus(), 0);
+    }
+
+    function openUserEmailDialog(profile) {
+        emailTarget = profile;
+        userEmailUser.textContent =
+            `Change the sign-in email for ` +
+            `${profile.display_name || profile.username}.`;
+        adminNewUserEmail.value = profile.contact_email || "";
+        adminConfirmUserEmail.value = profile.contact_email || "";
+        userEmailDialog.showModal();
+        window.setTimeout(() => adminNewUserEmail.focus(), 0);
     }
 
     function clearOwnPasswordInputs() {
@@ -651,6 +680,18 @@
                         "Reset Password",
                         "user-action-button",
                         () => openPasswordDialog(profile)
+                    ),
+                    createUserActionButton(
+                        "Change Email",
+                        "user-action-button",
+                        () => openUserEmailDialog(profile)
+                    ),
+                    createUserActionButton(
+                        profile.must_change_password
+                            ? "Clear Password Reset"
+                            : "Require Password Reset",
+                        "user-action-button",
+                        () => setPasswordResetRequired(profile)
                     )
                 );
                 card.appendChild(actions);
@@ -858,6 +899,131 @@
         finally {
             savePasswordButton.disabled = false;
             savePasswordButton.textContent = "Save Password";
+        }
+    }
+
+    async function changeUserEmail(event) {
+        event.preventDefault();
+
+        if (!emailTarget) {
+            return;
+        }
+
+        const nextEmail = adminNewUserEmail.value.trim().toLowerCase();
+        const confirmation =
+            adminConfirmUserEmail.value.trim().toLowerCase();
+
+        if (!/^\S+@\S+\.\S+$/.test(nextEmail)) {
+            setStatus("Enter a valid email address.", "error");
+            return;
+        }
+
+        if (nextEmail !== confirmation) {
+            setStatus("The new email addresses do not match.", "error");
+            return;
+        }
+
+        if (
+            emailTarget.contact_email &&
+            nextEmail === emailTarget.contact_email.toLowerCase()
+        ) {
+            setStatus("Enter a different email address.", "error");
+            return;
+        }
+
+        saveUserEmailButton.disabled = true;
+        saveUserEmailButton.textContent = "Changing...";
+
+        try {
+            const targetUsername = emailTarget.username;
+            const { data, error } = await supabase.functions.invoke(
+                "admin-users",
+                {
+                    body: {
+                        action: "change_email",
+                        targetUserId: emailTarget.id,
+                        email: nextEmail
+                    }
+                }
+            );
+
+            if (error) {
+                throw error;
+            }
+
+            if (data && data.error) {
+                throw new Error(data.error);
+            }
+
+            userEmailDialog.close();
+            emailTarget = null;
+            await loadUsers({ silent: true });
+            setStatus(
+                `${targetUsername}'s email was changed to ${nextEmail}.`,
+                "success"
+            );
+        }
+        catch (error) {
+            console.error("Failed to change user email:", error);
+            setStatus(
+                await getFunctionErrorMessage(
+                    error,
+                    "Could not change the user's email."
+                ),
+                "error"
+            );
+        }
+        finally {
+            saveUserEmailButton.disabled = false;
+            saveUserEmailButton.textContent = "Change Email";
+        }
+    }
+
+    async function setPasswordResetRequired(profile) {
+        const required = !profile.must_change_password;
+
+        try {
+            setStatus(`Updating ${profile.username}...`, "info");
+
+            const { data, error } = await supabase.functions.invoke(
+                "admin-users",
+                {
+                    body: {
+                        action: "set_password_reset_required",
+                        targetUserId: profile.id,
+                        required
+                    }
+                }
+            );
+
+            if (error) {
+                throw error;
+            }
+
+            if (data && data.error) {
+                throw new Error(data.error);
+            }
+
+            await loadUsers({ silent: true });
+            setStatus(
+                required
+                    ? `${profile.username} must reset their password.`
+                    : `${profile.username}'s password reset requirement was cleared.`,
+                "success"
+            );
+        }
+        catch (error) {
+            console.error(
+                "Failed to update password reset requirement:",
+                error
+            );
+            setStatus(
+                await getFunctionErrorMessage(
+                    error,
+                    "Could not update the password reset requirement."
+                ),
+                "error"
+            );
         }
     }
 
@@ -1141,6 +1307,10 @@
         );
     }
 
+    if (userEmailForm) {
+        userEmailForm.addEventListener("submit", changeUserEmail);
+    }
+
     if (cancelPasswordButton) {
         cancelPasswordButton.addEventListener("click", () => {
             passwordDialog.close();
@@ -1159,6 +1329,13 @@
         cancelOwnEmailButton.addEventListener("click", () => {
             clearOwnEmailInputs();
             ownEmailDialog.close();
+        });
+    }
+
+    if (cancelUserEmailButton) {
+        cancelUserEmailButton.addEventListener("click", () => {
+            userEmailDialog.close();
+            emailTarget = null;
         });
     }
 

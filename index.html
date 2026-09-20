@@ -836,6 +836,47 @@
             </form>
         </dialog>
 
+        <dialog id="changeUserEmailDialog" class="password-dialog">
+            <form id="changeUserEmailForm" method="dialog">
+                <h2>Change User Email</h2>
+                <p id="changeUserEmailUser"></p>
+
+                <label for="adminNewUserEmail">
+                    New Email
+                </label>
+                <input
+                    id="adminNewUserEmail"
+                    type="email"
+                    autocomplete="off"
+                    required
+                >
+
+                <label for="adminConfirmUserEmail">
+                    Confirm New Email
+                </label>
+                <input
+                    id="adminConfirmUserEmail"
+                    type="email"
+                    autocomplete="off"
+                    required
+                >
+
+                <div class="dialog-actions">
+                    <button
+                        id="cancelUserEmailButton"
+                        class="secondary-button"
+                        type="button"
+                    >Cancel</button>
+
+                    <button
+                        id="saveUserEmailButton"
+                        class="primary-button"
+                        type="submit"
+                    >Change Email</button>
+                </div>
+            </form>
+        </dialog>
+
         <dialog id="purgeInventoryDialog" class="password-dialog purge-dialog">
             <form id="purgeInventoryForm" method="dialog">
                 <h2>Permanently Purge Inventory?</h2>
@@ -1856,7 +1897,7 @@
 <script src="./js/add-dvd.js?v=20260918-17"></script>
 <script src="./js/sold.js?v=20260918-12"></script>
 <script src="./js/checkout.js?v=20260918-14"></script>
-<script src="./js/users.js?v=20260920-01"></script>
+    <script src="./js/users.js?v=20260920-02"></script>
 <script src="./js/inventory.js?v=20260918-12"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="./js/export.js?v=20260918-14"></script>

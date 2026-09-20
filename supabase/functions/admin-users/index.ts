@@ -284,6 +284,159 @@ Deno.serve(async (request) => {
             return jsonResponse({ success: true });
         }
 
+        if (action === "change_email") {
+            const targetUserId = requiredString(
+                body.targetUserId,
+                "Target user",
+                50
+            );
+            const email = requiredString(
+                body.email,
+                "Email",
+                254
+            ).toLowerCase();
+
+            if (targetUserId === caller.id) {
+                throw new Error(
+                    "Use your account settings to change your own email."
+                );
+            }
+
+            if (!/^\S+@\S+\.\S+$/.test(email)) {
+                throw new Error("Enter a valid email address.");
+            }
+
+            const { data: targetProfile, error: targetError } =
+                await adminClient
+                    .from("profiles")
+                    .select("id, username, contact_email")
+                    .eq("id", targetUserId)
+                    .maybeSingle();
+
+            if (targetError || !targetProfile) {
+                throw new Error("User does not exist.");
+            }
+
+            const oldEmail = targetProfile.contact_email || "";
+
+            if (oldEmail.toLowerCase() === email) {
+                throw new Error("Enter a different email address.");
+            }
+
+            const { error: authUpdateError } =
+                await adminClient.auth.admin.updateUserById(
+                    targetUserId,
+                    { email, email_confirm: true }
+                );
+
+            if (authUpdateError) {
+                throw authUpdateError;
+            }
+
+            const { data: profile, error: profileUpdateError } =
+                await adminClient
+                    .from("profiles")
+                    .update({ contact_email: email })
+                    .eq("id", targetUserId)
+                    .select(
+                        "id, username, display_name, contact_email, role, active, must_change_password"
+                    )
+                    .single();
+
+            if (profileUpdateError) {
+                if (oldEmail) {
+                    await adminClient.auth.admin.updateUserById(
+                        targetUserId,
+                        { email: oldEmail, email_confirm: true }
+                    );
+                }
+                throw profileUpdateError;
+            }
+
+            const { error: auditError } = await adminClient
+                .from("user_admin_audit")
+                .insert({
+                    target_user_id: targetUserId,
+                    target_username: targetProfile.username,
+                    action: "email_changed",
+                    old_value: oldEmail,
+                    new_value: email,
+                    performed_by: caller.id
+                });
+
+            if (auditError) {
+                throw auditError;
+            }
+
+            return jsonResponse({ profile });
+        }
+
+        if (action === "set_password_reset_required") {
+            const targetUserId = requiredString(
+                body.targetUserId,
+                "Target user",
+                50
+            );
+
+            if (typeof body.required !== "boolean") {
+                throw new Error("Password reset setting is required.");
+            }
+
+            if (targetUserId === caller.id) {
+                throw new Error(
+                    "Use your account settings to change your own password."
+                );
+            }
+
+            const { data: targetProfile, error: targetError } =
+                await adminClient
+                    .from("profiles")
+                    .select("id, username, must_change_password")
+                    .eq("id", targetUserId)
+                    .maybeSingle();
+
+            if (targetError || !targetProfile) {
+                throw new Error("User does not exist.");
+            }
+
+            if (targetProfile.must_change_password === body.required) {
+                return jsonResponse({ profile: targetProfile });
+            }
+
+            const { data: profile, error: updateError } =
+                await adminClient
+                    .from("profiles")
+                    .update({ must_change_password: body.required })
+                    .eq("id", targetUserId)
+                    .select(
+                        "id, username, display_name, contact_email, role, active, must_change_password"
+                    )
+                    .single();
+
+            if (updateError) {
+                throw updateError;
+            }
+
+            const { error: auditError } = await adminClient
+                .from("user_admin_audit")
+                .insert({
+                    target_user_id: targetUserId,
+                    target_username: targetProfile.username,
+                    action: body.required
+                        ? "password_reset_required"
+                        : "password_reset_cleared",
+                    old_value: String(targetProfile.must_change_password),
+                    new_value: String(body.required),
+                    performed_by: caller.id
+                });
+
+            if (auditError) {
+                throw auditError;
+            }
+
+            return jsonResponse({ profile });
+        }
+
         return jsonResponse({ error: "Unsupported action." }, 400);
     }
     catch (error) {
