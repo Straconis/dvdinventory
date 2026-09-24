@@ -1270,13 +1270,14 @@
         <div class="workflow-card">
 
             <label for="newToteCode">
-                Tote Code
+                Tote Name
             </label>
 
             <input
                 id="newToteCode"
                 type="text"
-                placeholder="Example: TOTE-00001"
+                maxlength="50"
+                placeholder="Example: B1 or TOTE-B1"
             >
 
             <label for="newToteDescription">
@@ -1861,8 +1862,15 @@
     class="password-dialog tote-editor-dialog"
 >
     <form id="toteEditorForm" method="dialog">
-        <h2>Edit Tote Location</h2>
-        <p id="toteEditorCode"></p>
+        <h2>Edit Tote</h2>
+
+        <label for="toteEditorCode">Tote Name</label>
+        <input
+            id="toteEditorCode"
+            type="text"
+            maxlength="50"
+            autocomplete="off"
+        >
 
         <label for="toteEditorDescription">Description</label>
         <input
@@ -1917,14 +1925,14 @@
 <script src="./js/auth.js"></script>
 <script src="./js/barcode.js"></script>
 <script src="./js/release-editor.js?v=20260918-12"></script>
-<script src="./js/tote-editor.js?v=20260918-12"></script>
-<script src="./js/totes.js?v=20260918-16"></script>
+<script src="./js/tote-editor.js?v=20260923-01"></script>
+<script src="./js/totes.js?v=20260923-01"></script>
 <script src="./js/enrichment.js?v=20260918-17"></script>
 <script src="./js/add-dvd.js?v=20260918-17"></script>
 <script src="./js/sold.js?v=20260918-12"></script>
 <script src="./js/checkout.js?v=20260918-14"></script>
     <script src="./js/users.js?v=20260920-04"></script>
-<script src="./js/inventory.js?v=20260918-12"></script>
+<script src="./js/inventory.js?v=20260923-01"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="./js/export.js?v=20260918-14"></script>
 <script

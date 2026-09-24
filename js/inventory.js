@@ -283,7 +283,7 @@
                 typeof window.DVD_TOTE_EDITOR.open === "function"
             ) {
                 locationActions.appendChild(
-                    actionButton("Edit Tote Location", "", () => {
+                    actionButton("Edit Tote", "", () => {
                         window.DVD_TOTE_EDITOR.open(
                             tote,
                             (updatedTote) => {

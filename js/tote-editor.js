@@ -10,7 +10,7 @@
     const supabase = window.dvdSupabase;
     const dialog = document.getElementById("toteEditorDialog");
     const form = document.getElementById("toteEditorForm");
-    const codeText = document.getElementById("toteEditorCode");
+    const codeInput = document.getElementById("toteEditorCode");
     const descriptionInput =
         document.getElementById("toteEditorDescription");
     const locationInput = document.getElementById("toteEditorLocation");
@@ -26,6 +26,17 @@
         const normalized = String(value || "").trim();
 
         return normalized || null;
+    }
+
+    function normalizeToteCode(value) {
+        if (
+            window.DVD_TOTES &&
+            typeof window.DVD_TOTES.normalizeCode === "function"
+        ) {
+            return window.DVD_TOTES.normalizeCode(value);
+        }
+
+        return String(value || "").trim().toUpperCase();
     }
 
     function setStatus(message, type) {
@@ -53,12 +64,12 @@
     function open(tote, onSaved) {
         targetTote = tote;
         savedCallback = typeof onSaved === "function" ? onSaved : null;
-        codeText.textContent = tote.tote_code;
+        codeInput.value = tote.tote_code;
         descriptionInput.value = tote.description || "";
         locationInput.value = tote.physical_location || "";
         setStatus("");
         dialog.showModal();
-        window.setTimeout(() => locationInput.focus(), 0);
+        window.setTimeout(() => codeInput.focus(), 0);
     }
 
     async function save(event) {
@@ -68,15 +79,29 @@
             return;
         }
 
+        const toteCode = normalizeToteCode(codeInput.value);
+
+        if (!toteCode) {
+            setStatus(
+                "Enter a tote name up to 50 characters.",
+                "error"
+            );
+            codeInput.focus();
+            return;
+        }
+
+        codeInput.value = toteCode;
+
         saving = true;
         saveButton.disabled = true;
         saveButton.textContent = "Saving...";
-        setStatus("Saving tote location...", "info");
+        setStatus("Saving tote...", "info");
 
         try {
             const { data, error } = await supabase
                 .from("totes")
                 .update({
+                    tote_code: toteCode,
                     description: optionalText(descriptionInput.value),
                     physical_location: optionalText(locationInput.value)
                 })
@@ -102,13 +127,18 @@
             window.dispatchEvent(
                 new CustomEvent("dvd-inventory-changed")
             );
+            window.dispatchEvent(
+                new CustomEvent("dvd-totes-changed")
+            );
         }
         catch (error) {
-            console.error("Failed to update tote location:", error);
+            console.error("Failed to update tote:", error);
             setStatus(
-                error && error.message
+                error && error.code === "23505"
+                    ? "That tote name is already in use."
+                    : error && error.message
                     ? error.message
-                    : "Could not update the tote location.",
+                    : "Could not update the tote.",
                 "error"
             );
         }

@@ -58,30 +58,24 @@
     function normalizeToteCode(value) {
         const raw = String(value || "")
             .trim()
+            .replace(/\s+/g, " ")
             .toUpperCase();
 
-        if (!raw) {
+        if (!raw || raw.length > 50 || /[\u0000-\u001f\u007f]/.test(raw)) {
             return "";
         }
-
-        let digits = null;
 
         if (/^\d{1,5}$/.test(raw)) {
-            digits = raw;
-        }
-        else {
-            const match = raw.match(/^TOTE-(\d{1,5})$/);
-
-            if (match) {
-                digits = match[1];
-            }
+            return `TOTE-${raw.padStart(5, "0")}`;
         }
 
-        if (digits === null) {
-            return "";
+        const legacyCode = raw.match(/^TOTE\s*-\s*(\d{1,5})$/);
+
+        if (legacyCode) {
+            return `TOTE-${legacyCode[1].padStart(5, "0")}`;
         }
 
-        return `TOTE-${digits.padStart(5, "0")}`;
+        return raw.replace(/\s*-\s*/g, "-");
     }
 
     function setStatus(message, type) {
@@ -600,6 +594,19 @@
         contentsButton.setAttribute("aria-expanded", "false");
         contentsButton.setAttribute("aria-controls", contentsId);
 
+        if (
+            window.DVD_TOTE_EDITOR &&
+            typeof window.DVD_TOTE_EDITOR.open === "function"
+        ) {
+            actions.appendChild(
+                createActionButton("Edit Tote", "", () => {
+                    window.DVD_TOTE_EDITOR.open(tote, () => {
+                        loadTotes({ silent: true });
+                    });
+                })
+            );
+        }
+
         actions.append(
             contentsButton,
             createActionButton("Print Label", "", () => {
@@ -863,7 +870,7 @@
 
         if (!toteCode) {
             setStatus(
-                "Enter a tote number or code such as 42 or TOTE-00042.",
+                "Enter a tote name such as B1, TOTE-B1, or 42.",
                 "error"
             );
 
