@@ -174,6 +174,7 @@
         const settings = Object.assign(
             {
                 title: String(value || "").trim().toUpperCase(),
+                paper: "thermal",
                 copies: 2,
                 titleSize: 44,
                 barcodeWidth: 68
@@ -210,11 +211,13 @@
             ".preview{display:grid;place-items:center;padding:24px}" +
             ".sheet{width:min(4in,calc(100vw - 48px));height:6in;" +
             "background:#fff;box-shadow:0 8px 30px #0003;overflow:hidden}" +
-            ".label{height:3in;display:flex;flex-direction:column;" +
+            ".sheet[data-paper=\"letter\"]{width:min(8.5in,calc(100vw - 48px));" +
+            "height:11in}" +
+            ".label{height:50%;display:flex;flex-direction:column;" +
             "align-items:center;justify-content:center;padding:.16in;" +
             "overflow:hidden}" +
             ".label:first-child{border-bottom:1px dashed #9ca3af}" +
-            ".sheet[data-copies=\"1\"] .label{height:6in}" +
+            ".sheet[data-copies=\"1\"] .label{height:100%}" +
             ".sheet[data-copies=\"1\"] .label:first-child{border:0}" +
             ".sheet[data-copies=\"1\"] .copy-two{display:none}" +
             ".tote-title{max-width:100%;margin:0 0 .12in;overflow-wrap:anywhere;" +
@@ -226,14 +229,20 @@
             "min-width:calc(50% - 8px);flex:1}.actions{width:100%;" +
             "margin-left:0}.actions button{flex:1}.preview{padding:14px}.sheet{" +
             "width:min(4in,calc(100vw - 28px));height:auto;aspect-ratio:2/3}" +
+            ".sheet[data-paper=\"letter\"]{width:calc(100vw - 28px);height:auto;" +
+            "aspect-ratio:8.5/11}" +
             ".label{height:50%}.sheet[data-copies=\"1\"] .label{height:100%}}" +
             "@page{size:4in 6in;margin:0}" +
-            "@media print{html,body{width:4in;height:6in;background:#fff}" +
+            "@media print{html,body{background:#fff}" +
             ".toolbar{display:none}.preview{display:block;padding:0}.sheet{" +
             "width:4in;height:6in;box-shadow:none}.label:first-child{" +
-            "border-bottom:1px dashed #777}}" +
+            "border-bottom:1px dashed #777}.sheet[data-paper=\"letter\"]{" +
+            "width:8.5in;height:11in}}" +
             "</style></head><body>" +
             "<div class=\"toolbar\">" +
+            "<div class=\"control\"><label for=\"paper\">Paper</label>" +
+            "<select id=\"paper\"><option value=\"thermal\">4 x 6 Thermal</option>" +
+            "<option value=\"letter\">US Letter (8.5 x 11)</option></select></div>" +
             "<div class=\"control\"><label for=\"copies\">Labels per sheet</label>" +
             "<select id=\"copies\"><option value=\"1\">1 label</option>" +
             "<option value=\"2\">2 labels</option></select></div>" +
@@ -257,6 +266,7 @@
 
         const previewDocument = printWindow.document;
         const sheet = previewDocument.getElementById("sheet");
+        const paperInput = previewDocument.getElementById("paper");
         const copiesInput = previewDocument.getElementById("copies");
         const titleSizeInput =
             previewDocument.getElementById("titleSize");
@@ -278,11 +288,17 @@
             }
         );
 
+        paperInput.value = settings.paper === "letter"
+            ? "letter"
+            : "thermal";
         copiesInput.value = String(settings.copies === 1 ? 1 : 2);
         titleSizeInput.value = String(settings.titleSize);
         barcodeWidthInput.value = String(settings.barcodeWidth);
 
         function updatePreview() {
+            const paper = paperInput.value === "letter"
+                ? "letter"
+                : "thermal";
             const copies = copiesInput.value === "1" ? "1" : "2";
             const titleSize = Math.max(
                 24,
@@ -293,7 +309,18 @@
                 Math.min(96, Number(barcodeWidthInput.value) || 68)
             );
 
+            sheet.dataset.paper = paper;
             sheet.dataset.copies = copies;
+            previewDocument.querySelectorAll("style[data-page-size]")
+                .forEach((style) => style.remove());
+
+            const pageSizeStyle = previewDocument.createElement("style");
+
+            pageSizeStyle.dataset.pageSize = "true";
+            pageSizeStyle.textContent = paper === "letter"
+                ? "@page{size:letter portrait;margin:0}"
+                : "@page{size:4in 6in;margin:0}";
+            previewDocument.head.appendChild(pageSizeStyle);
             previewDocument.documentElement.style.setProperty(
                 "--title-size",
                 `${titleSize}pt`
@@ -306,6 +333,7 @@
             barcodeWidthValue.textContent = `${barcodeWidth}%`;
         }
 
+        paperInput.addEventListener("change", updatePreview);
         copiesInput.addEventListener("change", updatePreview);
         titleSizeInput.addEventListener("input", updatePreview);
         barcodeWidthInput.addEventListener("input", updatePreview);
