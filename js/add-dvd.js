@@ -19,12 +19,18 @@
         document.getElementById("manualDvdEdition");
     const submitButton = document.getElementById("addDvdButton");
     const status = document.getElementById("addDvdStatus");
+    const statusText = document.getElementById("addDvdStatusText");
+    const editAddedDvdButton =
+        document.getElementById("editAddedDvdButton");
 
     let addingDvd = false;
     let noUpcMode = false;
+    let lastAddedRelease = null;
 
     function setStatus(message, type) {
-        status.textContent = message || "";
+        statusText.textContent = message || "";
+        lastAddedRelease = null;
+        editAddedDvdButton.classList.add("hidden");
         status.classList.remove(
             "hidden",
             "workflow-status-success",
@@ -40,6 +46,36 @@
         status.classList.add(
             `workflow-status-${type || "info"}`
         );
+    }
+
+    function offerEdit(release) {
+        if (!release || !release.id) {
+            return;
+        }
+
+        lastAddedRelease = release;
+        editAddedDvdButton.classList.remove("hidden");
+    }
+
+    async function loadRelease(releaseId) {
+        if (!releaseId) {
+            return null;
+        }
+
+        const { data, error } = await supabase
+            .from("physical_releases")
+            .select(
+                "id, upc, release_title, edition, format, release_year, studio, notes, metadata_status"
+            )
+            .eq("id", releaseId)
+            .single();
+
+        if (error) {
+            console.warn("Could not load the newly added DVD:", error);
+            return null;
+        }
+
+        return data;
     }
 
     function normalizeToteCode(value) {
@@ -220,6 +256,8 @@
                 );
             }
 
+            offerEdit(await loadRelease(releaseId));
+
             if (noUpcMode) {
                 manualTitleInput.focus();
             }
@@ -248,6 +286,29 @@
     if (toggleNoUpcButton) {
         toggleNoUpcButton.addEventListener("click", () => {
             setNoUpcMode(!noUpcMode);
+        });
+    }
+
+    if (editAddedDvdButton) {
+        editAddedDvdButton.addEventListener("click", () => {
+            if (
+                !lastAddedRelease ||
+                !window.DVD_RELEASE_EDITOR ||
+                typeof window.DVD_RELEASE_EDITOR.open !== "function"
+            ) {
+                return;
+            }
+
+            window.DVD_RELEASE_EDITOR.open(
+                lastAddedRelease,
+                (updatedRelease) => {
+                    setStatus(
+                        `Updated ${updatedRelease.release_title}. Scan or enter the next DVD.`,
+                        "success"
+                    );
+                    offerEdit(updatedRelease);
+                }
+            );
         });
     }
 

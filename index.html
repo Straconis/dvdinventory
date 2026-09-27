@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="./css/app.css?v=20260927-01"
+        href="./css/app.css?v=20260927-02"
     >
 </head>
 
@@ -1071,12 +1071,19 @@
                 type="submit"
             >Add DVD</button>
 
-            <p
+            <div
                 id="addDvdStatus"
                 class="workflow-status hidden"
                 role="status"
                 aria-live="polite"
-            ></p>
+            >
+                <span id="addDvdStatusText"></span>
+                <button
+                    id="editAddedDvdButton"
+                    class="secondary-button compact-secondary-button hidden"
+                    type="button"
+                >Edit Title</button>
+            </div>
 
         </form>
 
@@ -1964,7 +1971,7 @@
 <script src="./js/tote-editor.js?v=20260923-01"></script>
 <script src="./js/totes.js?v=20260923-01"></script>
 <script src="./js/enrichment.js?v=20260918-17"></script>
-<script src="./js/add-dvd.js?v=20260927-01"></script>
+<script src="./js/add-dvd.js?v=20260927-02"></script>
 <script src="./js/sold.js?v=20260927-01"></script>
 <script src="./js/checkout.js?v=20260918-14"></script>
     <script src="./js/users.js?v=20260920-04"></script>

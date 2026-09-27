@@ -1242,6 +1242,15 @@ button:disabled {
     color: #cbd5e1;
 }
 
+#editAddedDvdButton {
+    display: block;
+    margin-top: 0.7rem;
+}
+
+#editAddedDvdButton.hidden {
+    display: none;
+}
+
 .sold-details {
     margin-top: 1.25rem;
     padding-top: 1.25rem;
