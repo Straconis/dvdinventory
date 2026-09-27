@@ -1148,6 +1148,19 @@ body.auth-loading .app-footer {
     border-color: #64748b;
 }
 
+.compact-secondary-button {
+    align-self: start;
+    margin-top: 14px;
+}
+
+.manual-dvd-fields {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+
 .user-menu {
     display: flex;
     align-items: center;

@@ -16,7 +16,10 @@
     const releaseSummary =
         document.getElementById("soldReleaseSummary");
     const toteSelect = document.getElementById("soldTote");
+    const reasonSelect = document.getElementById("soldReason");
+    const quantityLabel = document.getElementById("soldQuantityLabel");
     const quantityInput = document.getElementById("soldQuantity");
+    const notesLabel = document.getElementById("soldNotesLabel");
     const notesInput = document.getElementById("soldNotes");
     const submitButton =
         document.getElementById("soldSubmitButton");
@@ -24,7 +27,34 @@
     let currentRelease = null;
     let inventoryByToteId = new Map();
     let lookingUp = false;
-    let recordingSale = false;
+    let recordingRemoval = false;
+
+    const reasonLabels = {
+        sold: {
+            quantity: "Quantity Sold",
+            notes: "Sale Notes",
+            placeholder: "Optional buyer, order number, marketplace, or other notes",
+            button: "Record Sold DVD",
+            busy: "Recording...",
+            confirmVerb: "Record",
+            confirmReason: "sold",
+            notePrefix: "Sold",
+            successVerb: "Recorded",
+            successReason: "as sold"
+        },
+        correction: {
+            quantity: "Quantity to Remove",
+            notes: "Correction Notes",
+            placeholder: "Optional reason, such as accidental duplicate entry",
+            button: "Remove Copy",
+            busy: "Removing...",
+            confirmVerb: "Remove",
+            confirmReason: "inventory correction",
+            notePrefix: "Inventory correction",
+            successVerb: "Removed",
+            successReason: "as an inventory correction"
+        }
+    };
 
     function setStatus(message, type) {
         if (!status) {
@@ -57,12 +87,17 @@
 
     function getReleaseName(release) {
         const title = getRelatedRecord(release && release.titles);
+        const upc = release && release.upc;
 
         return (
             (title && title.title) ||
             (release && release.release_title) ||
-            (release && release.upc
-                ? `UPC ${release.upc}`
+            (upc
+                ? (
+                    /^NO-UPC-/i.test(String(upc))
+                        ? "DVD Without UPC"
+                        : `UPC ${upc}`
+                )
                 : "Unknown DVD")
         );
     }
@@ -98,7 +133,11 @@
             metadata.push(String(year));
         }
 
-        metadata.push(`UPC ${release.upc}`);
+        metadata.push(
+            /^NO-UPC-/i.test(String(release.upc || ""))
+                ? "No UPC"
+                : `UPC ${release.upc}`
+        );
 
         const detail = document.createElement("span");
 
@@ -119,6 +158,21 @@
         ) {
             quantityInput.value = "1";
         }
+    }
+
+    function getReason() {
+        return reasonLabels[reasonSelect.value]
+            ? reasonSelect.value
+            : "sold";
+    }
+
+    function updateReasonLabels() {
+        const labels = reasonLabels[getReason()];
+
+        quantityLabel.textContent = labels.quantity;
+        notesLabel.textContent = labels.notes;
+        notesInput.placeholder = labels.placeholder;
+        submitButton.textContent = labels.button;
     }
 
     function renderInventoryLocations(inventoryRows) {
@@ -272,13 +326,15 @@
         }
     }
 
-    async function recordSoldDvd() {
-        if (recordingSale || !currentRelease) {
+    async function recordRemovedDvd() {
+        if (recordingRemoval || !currentRelease) {
             return;
         }
 
         const inventory = inventoryByToteId.get(toteSelect.value);
         const quantity = Number(quantityInput.value);
+        const reason = getReason();
+        const labels = reasonLabels[reason];
 
         if (
             !inventory ||
@@ -296,8 +352,10 @@
         const tote = getRelatedRecord(inventory.totes);
         const title = getReleaseName(currentRelease);
         const confirmed = window.confirm(
-            `Record ${quantity} sold ${quantity === 1 ? "copy" : "copies"} ` +
+            `${labels.confirmVerb} ${quantity} ` +
+            `${quantity === 1 ? "copy" : "copies"} ` +
             `of ${title} from ${tote.tote_code}?\n\n` +
+            `Reason: ${labels.confirmReason}.\n\n` +
             "This permanently reduces available inventory. " +
             "The transaction history will be preserved."
         );
@@ -306,14 +364,14 @@
             return;
         }
 
-        recordingSale = true;
+        recordingRemoval = true;
         submitButton.disabled = true;
-        submitButton.textContent = "Recording...";
+        submitButton.textContent = labels.busy;
 
         const optionalNotes = String(notesInput.value || "").trim();
         const transactionNotes = optionalNotes
-            ? `Sold from ${tote.tote_code}. ${optionalNotes}`
-            : `Sold from ${tote.tote_code}.`;
+            ? `${labels.notePrefix} from ${tote.tote_code}. ${optionalNotes}`
+            : `${labels.notePrefix} from ${tote.tote_code}.`;
 
         try {
             const { error } = await supabase.rpc(
@@ -335,8 +393,10 @@
                 silent: true
             });
             setStatus(
-                `Recorded ${quantity} sold ${quantity === 1 ? "copy" : "copies"} ` +
-                `of ${title} from ${tote.tote_code}.`,
+                `${labels.successVerb} ${quantity} ` +
+                `${quantity === 1 ? "copy" : "copies"} ` +
+                `of ${title} from ${tote.tote_code} ` +
+                `${labels.successReason}.`,
                 "success"
             );
 
@@ -345,18 +405,18 @@
             );
         }
         catch (error) {
-            console.error("Failed to record sold DVD:", error);
+            console.error("Failed to remove DVD:", error);
             setStatus(
                 error && error.message
                     ? error.message
-                    : "Could not record the sold DVD.",
+                    : "Could not remove the DVD.",
                 "error"
             );
         }
         finally {
-            recordingSale = false;
+            recordingRemoval = false;
             submitButton.disabled = false;
-            submitButton.textContent = "Record Sold DVD";
+            updateReasonLabels();
         }
     }
 
@@ -371,13 +431,23 @@
         toteSelect.addEventListener("change", updateQuantityLimit);
     }
 
+    if (reasonSelect) {
+        reasonSelect.addEventListener("change", updateReasonLabels);
+        updateReasonLabels();
+    }
+
     if (submitButton) {
-        submitButton.addEventListener("click", recordSoldDvd);
+        submitButton.addEventListener("click", recordRemovedDvd);
     }
 
     window.DVD_SOLD = Object.freeze({
-        async open(upc, toteId) {
+        async open(upc, toteId, reason) {
             upcInput.value = String(upc || "");
+
+            if (reasonLabels[reason]) {
+                reasonSelect.value = reason;
+                updateReasonLabels();
+            }
 
             if (
                 window.DVD_APP &&

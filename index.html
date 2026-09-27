@@ -17,7 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="./css/app.css?v=20260920-18"
+        href="./css/app.css?v=20260927-01"
     >
 </head>
 
@@ -363,9 +363,9 @@
                 <span class="action-icon">−</span>
 
                 <span>
-                    <strong>Sold / Remove DVD</strong>
+                    <strong>Remove DVD</strong>
                     <small>
-                        Permanently remove a sold copy and preserve its history.
+                        Record a sale or correct an accidental duplicate.
                     </small>
                 </span>
             </button>
@@ -375,7 +375,7 @@
     </section>
 
 
-    <!-- SOLD / REMOVE DVD -->
+    <!-- REMOVE DVD -->
 
     <section
         id="sold"
@@ -384,11 +384,11 @@
 
         <div class="page-heading">
             <div>
-                <p class="eyebrow">OUTGOING COLLECTION</p>
-                <h1>Sold / Remove DVD</h1>
+                <p class="eyebrow">INVENTORY REMOVAL</p>
+                <h1>Remove DVD</h1>
                 <p>
-                    Remove a sold copy from available inventory while
-                    preserving the transaction history.
+                    Remove a sold copy or correct an accidental duplicate
+                    without recording it as a checkout.
                 </p>
             </div>
         </div>
@@ -443,10 +443,16 @@
                 <label for="soldTote">Tote of Origin</label>
                 <select id="soldTote" required></select>
                 <p class="helper-text sold-tote-helper">
-                    Choose the tote this sold copy will be removed from.
+                    Choose the tote this copy will be removed from.
                 </p>
 
-                <label for="soldQuantity">Quantity Sold</label>
+                <label for="soldReason">Removal Reason</label>
+                <select id="soldReason" required>
+                    <option value="sold">Sold copy</option>
+                    <option value="correction">Accidental duplicate or correction</option>
+                </select>
+
+                <label id="soldQuantityLabel" for="soldQuantity">Quantity Sold</label>
                 <input
                     id="soldQuantity"
                     type="number"
@@ -456,7 +462,7 @@
                     required
                 >
 
-                <label for="soldNotes">Sale Notes</label>
+                <label id="soldNotesLabel" for="soldNotes">Sale Notes</label>
                 <textarea
                     id="soldNotes"
                     rows="3"
@@ -966,7 +972,7 @@
                 <p class="eyebrow">INVENTORY ENTRY</p>
                 <h1>Add DVDs</h1>
                 <p>
-                    Choose a tote, then scan or manually enter DVD UPCs.
+                    Choose a tote, then scan a UPC or add a DVD without one.
                 </p>
             </div>
         </div>
@@ -1028,6 +1034,36 @@
                 Hardware barcode scanners can type directly into
                 these fields, or use Camera to scan with this device.
             </p>
+
+            <button
+                id="toggleNoUpcButton"
+                class="secondary-button compact-secondary-button"
+                type="button"
+            >Add DVD Without UPC</button>
+
+            <div id="manualDvdFields" class="manual-dvd-fields hidden">
+                <label for="manualDvdTitle">
+                    DVD Title
+                </label>
+
+                <input
+                    id="manualDvdTitle"
+                    type="text"
+                    placeholder="Enter title"
+                    autocomplete="off"
+                >
+
+                <label for="manualDvdEdition">
+                    Edition or Notes
+                </label>
+
+                <input
+                    id="manualDvdEdition"
+                    type="text"
+                    placeholder="Optional edition, set name, or note"
+                    autocomplete="off"
+                >
+            </div>
 
             <button
                 id="addDvdButton"
@@ -1924,15 +1960,15 @@
 <script src="./js/supabase-client.js"></script>
 <script src="./js/auth.js"></script>
 <script src="./js/barcode.js"></script>
-<script src="./js/release-editor.js?v=20260918-12"></script>
+<script src="./js/release-editor.js?v=20260927-01"></script>
 <script src="./js/tote-editor.js?v=20260923-01"></script>
 <script src="./js/totes.js?v=20260923-01"></script>
 <script src="./js/enrichment.js?v=20260918-17"></script>
-<script src="./js/add-dvd.js?v=20260918-17"></script>
-<script src="./js/sold.js?v=20260918-12"></script>
+<script src="./js/add-dvd.js?v=20260927-01"></script>
+<script src="./js/sold.js?v=20260927-01"></script>
 <script src="./js/checkout.js?v=20260918-14"></script>
     <script src="./js/users.js?v=20260920-04"></script>
-<script src="./js/inventory.js?v=20260923-01"></script>
+<script src="./js/inventory.js?v=20260927-01"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="./js/export.js?v=20260918-14"></script>
 <script

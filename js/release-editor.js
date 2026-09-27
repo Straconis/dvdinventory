@@ -69,7 +69,9 @@
         savedCallback = typeof onSaved === "function"
             ? onSaved
             : null;
-        upcText.textContent = `UPC ${release.upc}`;
+        upcText.textContent = /^NO-UPC-/i.test(String(release.upc || ""))
+            ? "No UPC"
+            : `UPC ${release.upc}`;
         titleInput.value =
             release.release_title ||
             (relatedTitle && relatedTitle.title) ||

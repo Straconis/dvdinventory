@@ -11,10 +11,17 @@
     const form = document.getElementById("addDvdForm");
     const toteInput = document.getElementById("addToteCode");
     const upcInput = document.getElementById("addUpc");
+    const toggleNoUpcButton =
+        document.getElementById("toggleNoUpcButton");
+    const manualFields = document.getElementById("manualDvdFields");
+    const manualTitleInput = document.getElementById("manualDvdTitle");
+    const manualEditionInput =
+        document.getElementById("manualDvdEdition");
     const submitButton = document.getElementById("addDvdButton");
     const status = document.getElementById("addDvdStatus");
 
     let addingDvd = false;
+    let noUpcMode = false;
 
     function setStatus(message, type) {
         status.textContent = message || "";
@@ -57,6 +64,29 @@
         return compactValue;
     }
 
+    function setNoUpcMode(enabled) {
+        noUpcMode = Boolean(enabled);
+        manualFields.classList.toggle("hidden", !noUpcMode);
+        upcInput.required = !noUpcMode;
+        manualTitleInput.required = noUpcMode;
+        toggleNoUpcButton.textContent = noUpcMode
+            ? "Use UPC Instead"
+            : "Add DVD Without UPC";
+        submitButton.textContent = noUpcMode
+            ? "Add DVD Without UPC"
+            : "Add DVD";
+
+        if (noUpcMode) {
+            upcInput.value = "";
+            manualTitleInput.focus();
+        }
+        else {
+            manualTitleInput.value = "";
+            manualEditionInput.value = "";
+            upcInput.focus();
+        }
+    }
+
     async function addDvd(event) {
         event.preventDefault();
 
@@ -66,9 +96,15 @@
 
         const toteCode = normalizeToteCode(toteInput.value);
         const upc = normalizeUpc(upcInput.value);
+        const manualTitle = String(manualTitleInput.value || "").trim();
+        const manualEdition =
+            String(manualEditionInput.value || "").trim();
 
         toteInput.value = toteCode;
-        upcInput.value = upc;
+
+        if (!noUpcMode) {
+            upcInput.value = upc;
+        }
 
         if (!toteCode) {
             setStatus("Scan or enter a tote code.", "error");
@@ -76,7 +112,13 @@
             return;
         }
 
-        if (!/^(?:\d{8}|\d{12,14})$/.test(upc)) {
+        if (noUpcMode && !manualTitle) {
+            setStatus("Enter the DVD title.", "error");
+            manualTitleInput.focus();
+            return;
+        }
+
+        if (!noUpcMode && !/^(?:\d{8}|\d{12,14})$/.test(upc)) {
             setStatus(
                 "Enter an 8, 12, 13, or 14-digit barcode. Include the small digits at both ends of a UPC.",
                 "error"
@@ -91,15 +133,26 @@
         setStatus("Adding DVD to inventory...", "info");
 
         try {
-            const { data, error } = await supabase.rpc(
-                "add_inventory_by_codes",
-                {
-                    p_tote_code: toteCode,
-                    p_upc: upc,
-                    p_quantity: 1,
-                    p_notes: "Added through Add DVDs."
-                }
-            );
+            const { data, error } = noUpcMode
+                ? await supabase.rpc(
+                    "add_inventory_without_upc",
+                    {
+                        p_tote_code: toteCode,
+                        p_release_title: manualTitle,
+                        p_edition: manualEdition || null,
+                        p_quantity: 1,
+                        p_notes: "Manual no-UPC add through Add DVDs."
+                    }
+                )
+                : await supabase.rpc(
+                    "add_inventory_by_codes",
+                    {
+                        p_tote_code: toteCode,
+                        p_upc: upc,
+                        p_quantity: 1,
+                        p_notes: "Added through Add DVDs."
+                    }
+                );
 
             if (error) {
                 throw error;
@@ -115,6 +168,7 @@
             let lookupResult = null;
 
             if (
+                !noUpcMode &&
                 releaseId &&
                 window.DVD_ENRICHMENT &&
                 typeof window.DVD_ENRICHMENT.lookupRelease === "function"
@@ -129,8 +183,16 @@
             }
 
             upcInput.value = "";
+            manualTitleInput.value = "";
+            manualEditionInput.value = "";
 
-            if (lookupResult && lookupResult.status === "completed") {
+            if (noUpcMode) {
+                setStatus(
+                    `Added ${manualTitle} to ${toteCode}. Scan or enter the next DVD.`,
+                    "success"
+                );
+            }
+            else if (lookupResult && lookupResult.status === "completed") {
                 const title = lookupResult.release &&
                     lookupResult.release.release_title;
 
@@ -158,7 +220,12 @@
                 );
             }
 
-            upcInput.focus();
+            if (noUpcMode) {
+                manualTitleInput.focus();
+            }
+            else {
+                upcInput.focus();
+            }
         }
         catch (error) {
             console.error("Failed to add DVD:", error);
@@ -172,8 +239,16 @@
         finally {
             addingDvd = false;
             submitButton.disabled = false;
-            submitButton.textContent = "Add DVD";
+            submitButton.textContent = noUpcMode
+                ? "Add DVD Without UPC"
+                : "Add DVD";
         }
+    }
+
+    if (toggleNoUpcButton) {
+        toggleNoUpcButton.addEventListener("click", () => {
+            setNoUpcMode(!noUpcMode);
+        });
     }
 
     if (form) {

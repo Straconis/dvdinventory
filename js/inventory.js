@@ -81,7 +81,13 @@
 
         return release.release_title ||
             (title && title.title) ||
-            `UPC ${release.upc}`;
+            (isManualNoUpc(release.upc)
+                ? "DVD Without UPC"
+                : `UPC ${release.upc}`);
+    }
+
+    function isManualNoUpc(upc) {
+        return /^NO-UPC-/i.test(String(upc || ""));
     }
 
     function releaseDetails(release) {
@@ -161,7 +167,7 @@
 
         return [
             releaseName(release),
-            release.upc,
+            isManualNoUpc(release.upc) ? "no upc" : release.upc,
             release.edition,
             release.format,
             release.release_year,
@@ -237,7 +243,13 @@
 
         upcCell.className = "inventory-result-upc-cell";
         upcCell.appendChild(
-            textElement("span", "inventory-result-upc", item.release.upc)
+            textElement(
+                "span",
+                "inventory-result-upc",
+                isManualNoUpc(item.release.upc)
+                    ? "No UPC"
+                    : item.release.upc
+            )
         );
 
         locationsCell.className = "inventory-result-locations";
@@ -313,10 +325,27 @@
             ) {
                 locationActions.appendChild(
                     actionButton(
-                        "Remove",
+                        "Sold",
                         "inventory-action-danger",
                         () => {
-                            window.DVD_SOLD.open(item.release.upc, tote.id);
+                            window.DVD_SOLD.open(
+                                item.release.upc,
+                                tote.id,
+                                "sold"
+                            );
+                        }
+                    )
+                );
+                locationActions.appendChild(
+                    actionButton(
+                        "Remove 1 Copy",
+                        "",
+                        () => {
+                            window.DVD_SOLD.open(
+                                item.release.upc,
+                                tote.id,
+                                "correction"
+                            );
                         }
                     )
                 );
