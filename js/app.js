@@ -6,6 +6,13 @@ const pageButtons = document.querySelectorAll("[data-page]");
 const navigation = document.getElementById("mainNavigation");
 const menuButton = document.getElementById("menuButton");
 const copyrightYear = document.getElementById("copyrightYear");
+const dvdCount = document.getElementById("dvdCount");
+const editionCount = document.getElementById("editionCount");
+const toteCount = document.getElementById("toteCount");
+const checkoutCount = document.getElementById("checkoutCount");
+
+let dashboardAuthenticated = false;
+let dashboardRequest = 0;
 
 if (copyrightYear) {
     const firstYear = 2026;
@@ -14,6 +21,59 @@ if (copyrightYear) {
     copyrightYear.textContent = currentYear > firstYear
         ? `© ${firstYear}–${currentYear}`
         : `© ${firstYear}`;
+}
+
+
+function displayCount(element, value) {
+    if (element) {
+        element.textContent = Number(value || 0).toLocaleString();
+    }
+}
+
+
+async function loadDashboard() {
+    if (!dashboardAuthenticated || !window.dvdSupabase) {
+        return;
+    }
+
+    const request = dashboardRequest + 1;
+
+    dashboardRequest = request;
+
+    const dashboard = document.getElementById("dashboard");
+
+    if (dashboard) {
+        dashboard.setAttribute("aria-busy", "true");
+    }
+
+    try {
+        const { data, error } = await window.dvdSupabase.rpc(
+            "dashboard_stats"
+        );
+
+        if (error) {
+            throw error;
+        }
+
+        if (request !== dashboardRequest) {
+            return;
+        }
+
+        const stats = Array.isArray(data) ? data[0] : data;
+
+        displayCount(dvdCount, stats && stats.dvd_copies);
+        displayCount(editionCount, stats && stats.unique_editions);
+        displayCount(toteCount, stats && stats.totes);
+        displayCount(checkoutCount, stats && stats.checked_out);
+    }
+    catch (error) {
+        console.error("Failed to load dashboard totals:", error);
+    }
+    finally {
+        if (dashboard && request === dashboardRequest) {
+            dashboard.removeAttribute("aria-busy");
+        }
+    }
 }
 
 
@@ -30,6 +90,10 @@ function showPage(pageName) {
     });
 
     target.classList.add("active");
+
+    if (pageName === "dashboard") {
+        loadDashboard();
+    }
 
 
     document
@@ -104,6 +168,25 @@ menuButton.addEventListener("click", () => {
     );
 
 });
+
+
+window.addEventListener("dvd-auth-ready", () => {
+    dashboardAuthenticated = true;
+    loadDashboard();
+});
+
+
+window.addEventListener("dvd-inventory-changed", loadDashboard);
+
+
+if (
+    window.DVD_AUTH &&
+    typeof window.DVD_AUTH.isAuthenticated === "function" &&
+    window.DVD_AUTH.isAuthenticated()
+) {
+    dashboardAuthenticated = true;
+    loadDashboard();
+}
 
 
 const initialPage =

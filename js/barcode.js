@@ -192,7 +192,7 @@
             `<title>${safeTitle} Label Preview</title>` +
             "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
             "<style>" +
-            ":root{--title-size:44pt;--barcode-width:68%}" +
+            ":root{--title-size:44pt;--barcode-width:68%;--label-count:2}" +
             "*{box-sizing:border-box}" +
             "html,body{margin:0;min-height:100%;background:#e5e7eb;" +
             "color:#111827;font-family:Arial,sans-serif}" +
@@ -213,13 +213,17 @@
             "background:#fff;box-shadow:0 8px 30px #0003;overflow:hidden}" +
             ".sheet[data-paper=\"letter\"]{width:min(8.5in,calc(100vw - 48px));" +
             "height:11in}" +
-            ".label{height:50%;display:flex;flex-direction:column;" +
+            ".label{height:calc(100% / var(--label-count));display:flex;" +
+            "flex-direction:column;" +
             "align-items:center;justify-content:center;padding:.16in;" +
             "overflow:hidden}" +
-            ".label:first-child{border-bottom:1px dashed #9ca3af}" +
+            ".sheet[data-copies=\"2\"] .label:first-child," +
+            ".sheet[data-copies=\"3\"] .label:not(:last-child){" +
+            "border-bottom:1px dashed #9ca3af}" +
             ".sheet[data-copies=\"1\"] .label{height:100%}" +
-            ".sheet[data-copies=\"1\"] .label:first-child{border:0}" +
-            ".sheet[data-copies=\"1\"] .copy-two{display:none}" +
+            ".sheet[data-copies=\"1\"] .copy-two," +
+            ".sheet[data-copies=\"1\"] .copy-three," +
+            ".sheet[data-copies=\"2\"] .copy-three{display:none}" +
             ".tote-title{max-width:100%;margin:0 0 .12in;overflow-wrap:anywhere;" +
             "font-size:var(--title-size);font-weight:900;line-height:.95;" +
             "letter-spacing:0;text-align:center}" +
@@ -231,12 +235,15 @@
             "width:min(4in,calc(100vw - 28px));height:auto;aspect-ratio:2/3}" +
             ".sheet[data-paper=\"letter\"]{width:calc(100vw - 28px);height:auto;" +
             "aspect-ratio:8.5/11}" +
-            ".label{height:50%}.sheet[data-copies=\"1\"] .label{height:100%}}" +
+            ".label{height:calc(100% / var(--label-count))}" +
+            ".sheet[data-copies=\"1\"] .label{height:100%}}" +
             "@page{size:4in 6in;margin:0}" +
             "@media print{html,body{background:#fff}" +
             ".toolbar{display:none}.preview{display:block;padding:0}.sheet{" +
-            "width:4in;height:6in;box-shadow:none}.label:first-child{" +
-            "border-bottom:1px dashed #777}.sheet[data-paper=\"letter\"]{" +
+            "width:4in;height:6in;box-shadow:none}" +
+            ".sheet[data-copies=\"2\"] .label:first-child," +
+            ".sheet[data-copies=\"3\"] .label:not(:last-child){" +
+            "border-bottom-color:#777}.sheet[data-paper=\"letter\"]{" +
             "width:8.5in;height:11in}}" +
             "</style></head><body>" +
             "<div class=\"toolbar\">" +
@@ -245,7 +252,8 @@
             "<option value=\"letter\">US Letter (8.5 x 11)</option></select></div>" +
             "<div class=\"control\"><label for=\"copies\">Labels per sheet</label>" +
             "<select id=\"copies\"><option value=\"1\">1 label</option>" +
-            "<option value=\"2\">2 labels</option></select></div>" +
+            "<option value=\"2\">2 labels</option>" +
+            "<option value=\"3\">3 labels</option></select></div>" +
             "<div class=\"control\"><label for=\"titleSize\">Tote name " +
             "<output id=\"titleSizeValue\"></output></label>" +
             "<input id=\"titleSize\" type=\"range\" min=\"24\" max=\"64\" step=\"2\"></div>" +
@@ -258,6 +266,9 @@
             "<section class=\"label\"><h1 class=\"tote-title\"></h1>" +
             "<img class=\"barcode\" alt=\"Tote barcode\"></section>" +
             "<section class=\"label copy-two\" aria-hidden=\"true\">" +
+            "<h1 class=\"tote-title\"></h1>" +
+            "<img class=\"barcode\" alt=\"\"></section>" +
+            "<section class=\"label copy-three\" aria-hidden=\"true\">" +
             "<h1 class=\"tote-title\"></h1>" +
             "<img class=\"barcode\" alt=\"\"></section>" +
             "</div></main></body></html>"
@@ -291,7 +302,11 @@
         paperInput.value = settings.paper === "letter"
             ? "letter"
             : "thermal";
-        copiesInput.value = String(settings.copies === 1 ? 1 : 2);
+        copiesInput.value = String(
+            [1, 2, 3].includes(Number(settings.copies))
+                ? Number(settings.copies)
+                : 2
+        );
         titleSizeInput.value = String(settings.titleSize);
         barcodeWidthInput.value = String(settings.barcodeWidth);
 
@@ -299,7 +314,9 @@
             const paper = paperInput.value === "letter"
                 ? "letter"
                 : "thermal";
-            const copies = copiesInput.value === "1" ? "1" : "2";
+            const copies = ["1", "2", "3"].includes(copiesInput.value)
+                ? copiesInput.value
+                : "2";
             const titleSize = Math.max(
                 24,
                 Math.min(64, Number(titleSizeInput.value) || 44)
@@ -311,6 +328,10 @@
 
             sheet.dataset.paper = paper;
             sheet.dataset.copies = copies;
+            previewDocument.documentElement.style.setProperty(
+                "--label-count",
+                copies
+            );
             previewDocument.querySelectorAll("style[data-page-size]")
                 .forEach((style) => style.remove());
 
