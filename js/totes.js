@@ -359,7 +359,12 @@
             const toteCode =
                 normalizeToteCode(tote.tote_code) || tote.tote_code;
 
-            barcodes.printCode128Label(toteCode);
+            barcodes.printCode128Label(toteCode, {
+                title: toteCode,
+                copies: 2,
+                titleSize: 44,
+                barcodeWidth: 68
+            });
         }
         catch (error) {
             console.error("Failed to print tote label:", error);
