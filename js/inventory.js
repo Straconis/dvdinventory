@@ -12,6 +12,8 @@
     const inventorySummary = document.getElementById("inventorySummary");
     const inventoryStatus = document.getElementById("inventoryStatus");
     const refreshButton = document.getElementById("refreshInventoryButton");
+    const quantityFilter =
+        document.getElementById("inventoryQuantityFilter");
     const searchInput = document.getElementById("searchInput");
     const searchResults = document.getElementById("searchResults");
     const searchStatus = document.getElementById("searchStatus");
@@ -388,20 +390,30 @@
     }
 
     function renderInventory() {
-        const totalCopies = releases.reduce(
+        const showMultiple = quantityFilter.value === "multiple";
+        const visibleReleases = showMultiple
+            ? releases.filter((item) => item.quantity > 1)
+            : releases;
+        const totalCopies = visibleReleases.reduce(
             (sum, item) => sum + item.quantity,
             0
         );
-        const releaseWord = releases.length === 1 ? "release" : "releases";
+        const releaseWord = visibleReleases.length === 1
+            ? "release"
+            : "releases";
         const copyWord = totalCopies === 1 ? "copy" : "copies";
 
-        inventorySummary.textContent =
-            `${releases.length} ${releaseWord} | ` +
-            `${totalCopies} available ${copyWord}`;
+        inventorySummary.textContent = showMultiple
+            ? `${visibleReleases.length} ${releaseWord} with multiple copies | ` +
+                `${totalCopies} available ${copyWord}`
+            : `${visibleReleases.length} ${releaseWord} | ` +
+                `${totalCopies} available ${copyWord}`;
         renderResults(
             inventoryList,
-            releases,
-            "No DVDs are currently available in inventory."
+            visibleReleases,
+            showMultiple
+                ? "No DVD editions currently have a quantity higher than 1."
+                : "No DVDs are currently available in inventory."
         );
     }
 
@@ -534,6 +546,8 @@
     window.addEventListener("dvd-inventory-changed", loadInventory);
 
     refreshButton.addEventListener("click", loadInventory);
+
+    quantityFilter.addEventListener("change", renderInventory);
 
     searchInput.addEventListener("input", () => {
         window.clearTimeout(searchTimer);
