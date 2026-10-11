@@ -322,3 +322,23 @@ camera scanning is available.
 
 Hardware barcode scanners should work as keyboard-wedge input without
 requiring a separate workflow.
+
+### Editable DVD cover art
+
+Apply migration `018_dvd_cover_storage.sql` before deploying the updated frontend.
+Inventory shows the release's cover image. In Edit DVD Info, users can select
+an uploaded photo or use the phone camera picker, preview it, and save it with
+the release. Camera behavior depends on the device/browser; desktop users can
+use the upload picker. JPEG, PNG, and WebP files are limited to 10 MB. iPhone
+HEIC files must be exported as JPEG if the picker does not convert them.
+The `dvd-covers` bucket is publicly readable; uploads require an active account.
+Each replacement uses a unique path so existing covers remain available if a
+save fails. Failed database saves attempt to remove the new upload. Previously
+saved cover objects are retained to avoid breaking any shared references.
+Manual edits mark metadata verified, protecting the cover from enrichment.
+
+Verification before production: apply the migration in a test Supabase project,
+replace a cover from desktop and a phone, cancel a selection, retry a failed
+save, and confirm the saved image appears after reloading inventory. Verify
+inactive accounts cannot upload. No production migration is applied by this
+source change.

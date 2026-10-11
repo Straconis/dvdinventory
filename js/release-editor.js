@@ -23,6 +23,40 @@
     const saveButton =
         document.getElementById("saveReleaseEditorButton");
 
+    const coverPreview = document.getElementById("releaseEditorCoverPreview");
+    const coverInputs = [document.getElementById("releaseEditorCoverUpload"), document.getElementById("releaseEditorCoverCamera")];
+    let coverFile = null;
+    let previewUrl = null;
+
+    function resetCover(url) {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = null;
+        coverFile = null;
+        coverInputs.forEach(input => { input.value = ""; });
+        coverPreview.removeAttribute("src");
+        coverPreview.classList.add("hidden");
+        if (url && /^https?:\/\//i.test(url)) {
+            coverPreview.src = url;
+            coverPreview.classList.remove("hidden");
+        }
+    }
+
+    coverInputs.forEach(input => input.addEventListener("change", async () => {
+        const file = input.files[0];
+        if (!file || saving) return;
+        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 10 * 1024 * 1024) {
+            setStatus("Choose a JPEG, PNG, or WebP image up to 10 MB.", "error");
+            input.value = "";
+            return;
+        }
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        coverFile = file;
+        previewUrl = URL.createObjectURL(file);
+        coverPreview.src = previewUrl;
+        coverPreview.classList.remove("hidden");
+        setStatus("New cover selected. Save DVD Info to keep it.", "info");
+    }));
+
     let targetRelease = null;
     let savedCallback = null;
     let saving = false;
@@ -81,6 +115,7 @@
         yearInput.value = release.release_year || "";
         studioInput.value = release.studio || "";
         notesInput.value = release.notes || "";
+        resetCover(release.cover_image_url);
         setStatus("");
         dialog.showModal();
         window.setTimeout(() => titleInput.focus(), 0);
@@ -121,7 +156,19 @@
         saveButton.textContent = "Saving...";
         setStatus("Saving DVD information...", "info");
 
+        let uploadedPath = null;
+        let coverUrl = null;
+        coverInputs.forEach(input => { input.disabled = true; });
+        cancelButton.disabled = true;
         try {
+            if (coverFile) {
+                const extension = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[coverFile.type];
+                const path = `${targetRelease.id}/${crypto.randomUUID()}.${extension}`;
+                const { error: uploadError } = await supabase.storage.from("dvd-covers").upload(path, coverFile, { contentType: coverFile.type, upsert: false });
+                if (uploadError) throw uploadError;
+                uploadedPath = path;
+                coverUrl = supabase.storage.from("dvd-covers").getPublicUrl(path).data.publicUrl;
+            }
             const { data, error } = await supabase
                 .from("physical_releases")
                 .update({
@@ -131,11 +178,12 @@
                     release_year: releaseYear,
                     studio: optionalValue(studioInput),
                     notes: optionalValue(notesInput),
-                    metadata_status: "verified"
+                    metadata_status: "verified",
+                    ...(coverUrl ? { cover_image_url: coverUrl } : {})
                 })
                 .eq("id", targetRelease.id)
                 .select(
-                    "id, upc, release_title, edition, format, release_year, studio, notes, metadata_status"
+                    "id, upc, release_title, edition, format, release_year, studio, notes, cover_image_url, metadata_status"
                 )
                 .single();
 
@@ -143,6 +191,8 @@
                 throw error;
             }
 
+            uploadedPath = null;
+            resetCover(null);
             const callback = savedCallback;
 
             dialog.close();
@@ -158,6 +208,13 @@
             );
         }
         catch (error) {
+            if (uploadedPath) {
+                try {
+                    await supabase.storage.from("dvd-covers").remove([uploadedPath]);
+                } catch (cleanupError) {
+                    console.error("Could not clean up cover upload:", cleanupError);
+                }
+            }
             console.error("Failed to update DVD information:", error);
             setStatus(
                 error && error.message
@@ -167,6 +224,8 @@
             );
         }
         finally {
+            coverInputs.forEach(input => { input.disabled = false; });
+            cancelButton.disabled = false;
             saving = false;
             saveButton.disabled = false;
             saveButton.textContent = "Save DVD Info";
@@ -174,12 +233,16 @@
     }
 
     cancelButton.addEventListener("click", () => {
+        if (saving) return;
+        resetCover(null);
         dialog.close();
         targetRelease = null;
         savedCallback = null;
     });
 
-    dialog.addEventListener("cancel", () => {
+    dialog.addEventListener("cancel", event => {
+        if (saving) { event.preventDefault(); return; }
+        resetCover(null);
         targetRelease = null;
         savedCallback = null;
     });

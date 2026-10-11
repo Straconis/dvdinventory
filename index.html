@@ -1881,6 +1881,16 @@
             </div>
         </div>
 
+        <fieldset>
+            <legend>Cover art</legend>
+            <img id="releaseEditorCoverPreview" class="dvd-cover-preview hidden" alt="DVD cover preview">
+            <label for="releaseEditorCoverUpload">Upload a photo</label>
+            <input id="releaseEditorCoverUpload" type="file" accept="image/jpeg,image/png,image/webp">
+            <label for="releaseEditorCoverCamera">Take a photo</label>
+            <input id="releaseEditorCoverCamera" type="file" accept="image/*" capture="environment">
+            <p>Choose a JPEG, PNG, or WebP image up to 10 MB. The cover changes when you save.</p>
+        </fieldset>
+
         <label for="releaseEditorNotes">Notes</label>
         <textarea
             id="releaseEditorNotes"

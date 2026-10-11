@@ -203,6 +203,15 @@
         const details = releaseDetails(item.release);
 
         row.className = "inventory-result-row";
+        if (item.release.cover_image_url && /^https?:\/\//i.test(item.release.cover_image_url)) {
+            const cover = document.createElement("img");
+            cover.src = item.release.cover_image_url;
+            cover.alt = `${releaseName(item.release)} cover`;
+            cover.className = "inventory-cover";
+            cover.loading = "lazy";
+            cover.addEventListener("error", () => cover.remove());
+            releaseCell.appendChild(cover);
+        }
         releaseCell.appendChild(
             textElement(
                 "strong",
@@ -475,6 +484,7 @@
                         id,
                         upc,
                         release_title,
+                        cover_image_url,
                         edition,
                         format,
                         release_year,
