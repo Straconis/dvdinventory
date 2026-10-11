@@ -275,6 +275,86 @@
         }
     }
 
+    const scanButton = document.getElementById("scanMissingCoversButton");
+    const stopButton = document.getElementById("stopCoverScanButton");
+    const scanStatus = document.getElementById("coverScanStatus");
+    let scanning = false;
+    let stopRequested = false;
+
+    async function scanMissingCovers() {
+        if (!isAdmin() || scanning) return;
+        scanning = true;
+        stopRequested = false;
+        scanButton.disabled = true;
+        stopButton.disabled = false;
+        stopButton.classList.remove("hidden");
+        scanStatus.classList.remove("hidden", "workflow-status-error");
+        scanStatus.classList.add("workflow-status-info");
+        let checked = 0, added = 0, unavailable = 0, failed = 0, skipped = 0;
+        let lastId = 0;
+        let ending = "Scan complete.";
+        const progress = () => `${checked} checked; ${added} covers added; ${unavailable} unavailable; ${skipped} skipped; ${failed} failed.`;
+        try {
+            // Keyset pagination avoids skipping records as successful updates remove missing covers.
+            while (!stopRequested && isAdmin()) {
+                scanStatus.textContent = `Finding missing covers... ${progress()}`;
+                const { data, error } = await supabase.from("physical_releases")
+                    .select("id, upc, release_title")
+                    .or("cover_image_url.is.null,cover_image_url.eq.")
+                    .gt("id", lastId)
+                    .order("id", { ascending: true })
+                    .limit(100);
+                if (error) throw error;
+                if (!data || !data.length) break;
+                for (const release of data) {
+                    if (stopRequested || !isAdmin()) break;
+                    lastId = release.id;
+                    if (!/^\d{8,14}$/.test(release.upc || "")) {
+                        checked++; skipped++;
+                        continue;
+                    }
+                    scanStatus.textContent = `Looking up ${release.release_title || release.upc}... ${progress()}`;
+                    const { data: result, error: lookupError } = await supabase.functions.invoke("enrich-upc", {
+                        body: { physicalReleaseId: release.id, coverOnly: true }
+                    });
+                    if (lookupError) {
+                        // Stop on transport/auth/server errors instead of repeatedly calling a failing service.
+                        failed++;
+                        throw new Error(await readFunctionError(lookupError));
+                    }
+                    if (result?.status === "rate_limited") {
+                        ending = result.message || "Provider rate limit reached. Try again later.";
+                        stopRequested = true;
+                        break;
+                    }
+                    checked++;
+                    if (result?.status === "completed") added++;
+                    else if (result?.status === "not_found") unavailable++;
+                    else if (result?.status === "skipped") skipped++;
+                    else failed++;
+                }
+            }
+            if (ending === "Scan complete." && (stopRequested || !isAdmin())) ending = "Scan stopped.";
+            scanStatus.textContent = `${ending} ${progress()}`;
+        } catch (error) {
+            scanStatus.classList.remove("workflow-status-info");
+            scanStatus.classList.add("workflow-status-error");
+            scanStatus.textContent = `Scan stopped: ${error.message || "Cover lookup failed."} ${progress()}`;
+        } finally {
+            scanning = false;
+            scanButton.disabled = false;
+            stopButton.classList.add("hidden");
+            if (added) window.dispatchEvent(new CustomEvent("dvd-inventory-changed"));
+        }
+    }
+
+    if (scanButton) scanButton.addEventListener("click", scanMissingCovers);
+    if (stopButton) stopButton.addEventListener("click", () => {
+        stopRequested = true;
+        stopButton.disabled = true;
+        scanStatus.textContent = "Stopping after the current lookup...";
+    });
+
     function initializeForProfile(profile) {
         currentProfile = profile || null;
 

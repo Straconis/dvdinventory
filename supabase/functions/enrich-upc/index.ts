@@ -157,6 +157,49 @@ Deno.serve(async (request) => {
             return jsonResponse({ error: "DVD release was not found." }, 404);
         }
 
+        // Cover scans never change metadata or use the metadata retry queue.
+        if (body.coverOnly === true) {
+            if (profile.role !== "admin") {
+                return jsonResponse({ error: "Administrator privileges required." }, 403);
+            }
+            if (release.cover_image_url) {
+                return jsonResponse({ status: "skipped", message: "Existing cover preserved." });
+            }
+            if (!/^\d{8,14}$/.test(release.upc || "")) {
+                return jsonResponse({ status: "not_found", message: "No usable UPC for cover lookup." });
+            }
+            const response = await fetch(
+                "https://api.upcitemdb.com/prod/trial/lookup?upc=" + encodeURIComponent(release.upc),
+                { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(12000) }
+            );
+            if (response.status === 429) {
+                return jsonResponse({ status: "rate_limited", message: "UPC provider rate limit reached. Try again later." });
+            }
+            if ([400, 404].includes(response.status)) {
+                return jsonResponse({ status: "not_found", message: "No cover available for this UPC." });
+            }
+            if (!response.ok) throw new Error(`UPC provider returned status ${response.status}.`);
+            const payload = await response.json();
+            const item = Array.isArray(payload.items) ? payload.items[0] : null;
+            const cover = Array.isArray(item?.images)
+                ? item.images.find((url: unknown) => typeof url === "string" && /^https?:\/\//i.test(url))
+                : null;
+            if (!cover) {
+                return jsonResponse({ status: "not_found", message: "No cover available for this UPC." });
+            }
+            // Conditional write also protects a cover uploaded while the lookup was running.
+            const { data, error } = await adminClient.from("physical_releases")
+                .update({ cover_image_url: cover })
+                .eq("id", physicalReleaseId)
+                .or("cover_image_url.is.null,cover_image_url.eq.")
+                .select("id");
+            if (error) throw error;
+            return jsonResponse({
+                status: data?.length ? "completed" : "skipped",
+                message: data?.length ? "Cover added." : "Existing cover preserved."
+            });
+        }
+
         if (
             ["enriched", "verified"].includes(release.metadata_status) &&
             !force
