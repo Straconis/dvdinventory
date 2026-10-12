@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 const pages = document.querySelectorAll(".page");
 const pageButtons = document.querySelectorAll("[data-page]");
@@ -10,6 +10,31 @@ const dvdCount = document.getElementById("dvdCount");
 const editionCount = document.getElementById("editionCount");
 const toteCount = document.getElementById("toteCount");
 const checkoutCount = document.getElementById("checkoutCount");
+const missingCoverCount = document.getElementById("missingCoverCount");
+const missingDetailsCount = document.getElementById("missingDetailsCount");
+
+async function loadMetadataCounts(request) {
+    const results = await Promise.allSettled([
+        window.dvdSupabase.from("physical_releases")
+            .select("id", { count: "exact", head: true })
+            .or("cover_image_url.is.null,cover_image_url.eq."),
+        window.dvdSupabase.from("physical_releases")
+            .select("id", { count: "exact", head: true })
+            .or("release_title.is.null,release_title.eq.,format.is.null,format.eq.,release_year.is.null,studio.is.null,studio.eq.")
+    ]);
+    if (request !== dashboardRequest) return;
+    [missingCoverCount, missingDetailsCount].forEach((element, index) => {
+        if (!element) return;
+        const result = results[index];
+        if (result.status === "rejected" || result.value.error || result.value.count === null) {
+            element.textContent = "—";
+            element.title = "Could not load this count. Reopen the dashboard to retry.";
+        } else {
+            displayCount(element, result.value.count);
+            element.removeAttribute("title");
+        }
+    });
+}
 
 let dashboardAuthenticated = false;
 let dashboardRequest = 0;
@@ -47,9 +72,11 @@ async function loadDashboard() {
     }
 
     try {
-        const { data, error } = await window.dvdSupabase.rpc(
-            "dashboard_stats"
-        );
+        const [totals] = await Promise.all([
+            window.dvdSupabase.rpc("dashboard_stats"),
+            loadMetadataCounts(request)
+        ]);
+        const { data, error } = totals;
 
         if (error) {
             throw error;
