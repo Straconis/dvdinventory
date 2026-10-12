@@ -334,8 +334,20 @@
         let checked = 0, added = 0, unavailable = 0, failed = 0, skipped = 0;
         let lastId = 0;
         let ending = "Scan complete.";
-        const progress = () => `${checked} checked; ${added} covers added; ${unavailable} unavailable; ${skipped} skipped; ${failed} failed.`;
+        let librarySummary = "";
+        const progress = () => `${librarySummary}${checked} checked; ${added} covers added; ${unavailable} unavailable; ${skipped} skipped; ${failed} failed.`;
         try {
+            scanStatus.textContent = "Checking which titles need cover art...";
+            const [allReleases, missingCovers] = await Promise.all([
+                supabase.from("physical_releases").select("id", { count: "exact", head: true }),
+                supabase.from("physical_releases").select("id", { count: "exact", head: true })
+                    .or("cover_image_url.is.null,cover_image_url.eq.")
+            ]);
+            if (allReleases.error) throw allReleases.error;
+            if (missingCovers.error) throw missingCovers.error;
+            const total = Number(allReleases.count || 0);
+            const missing = Number(missingCovers.count || 0);
+            librarySummary = `Library: ${total} DVD titles. ${Math.max(0, total - missing)} already had cover art and did not need a lookup. ${missing} were missing cover art. `;
             // Keyset pagination avoids skipping records as successful updates remove missing covers.
             while (!stopRequested && isAdmin()) {
                 scanStatus.textContent = `Finding missing covers... ${progress()}`;
@@ -360,7 +372,7 @@
                 }
             }
             if (ending === "Scan complete." && (stopRequested || !isAdmin())) ending = "Scan stopped.";
-            scanStatus.textContent = `${ending} ${progress()}`;
+            scanStatus.textContent = `${ending} ${progress()}${unavailable ? ` For ${unavailable} titles, no artwork was available or the movie match was ambiguous. These need a refined title or manual cover upload.` : ""}`;
         } catch (error) {
             scanStatus.classList.remove("workflow-status-info");
             scanStatus.classList.add("workflow-status-error");

@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 
-function scanner({ releases = [], respond = () => ({ data: { status: 'not_found' } }), onPause } = {}) {
+function scanner({ releases = [], total = releases.length, respond = () => ({ data: { status: 'not_found' } }), onPause } = {}) {
     const elements = {}, calls = [], cursors = [], waits = [];
     let changed = 0;
     const element = id => elements[id] ||= {
@@ -13,13 +13,13 @@ function scanner({ releases = [], respond = () => ({ data: { status: 'not_found'
     };
     const profile = { role: 'admin', active: true };
     const db = {
-        select() { return this; }, or() { return this; },
+        select(field, options) { this.head = options?.head; return this; }, or() { this.missingOnly = true; return this; },
         gt(field, value) { cursors.push(value); this.cursor = value; return this; },
         order() { return this; }, limit() { return this; },
-        then(resolve) { resolve({ data: releases.filter(x => x.id > this.cursor).slice(0, 100) }); }
+        then(resolve) { resolve(this.head ? { count: this.missingOnly ? releases.length : total } : { data: releases.filter(x => x.id > this.cursor).slice(0, 100) }); }
     };
     const window = {
-        dvdSupabase: { from: () => db, functions: {
+        dvdSupabase: { from: () => ({ ...db }), functions: {
             async invoke(name, { body }) { calls.push(body.physicalReleaseId); return respond(body.physicalReleaseId, calls.length); }
         } },
         DVD_AUTH: { isAuthenticated: () => true, getProfile: () => profile },
@@ -74,4 +74,15 @@ test('invalid credentials stop without repeated requests', async () => {
     assert.deepEqual(app.calls, [1]);
     assert.equal(app.waits.length, 0);
     assert.match(app.element('coverScanStatus').textContent, /Invalid token/);
+});
+
+test('summary explains why only missing covers were looked up', async () => {
+    const app = scanner({ total: 175, releases: Array.from({ length: 6 }, (_, i) => ({ id: i + 1 })) });
+    await app.scan();
+    const summary = app.element('coverScanStatus').textContent;
+    assert.match(summary, /Library: 175 DVD titles/);
+    assert.match(summary, /169 already had cover art and did not need a lookup/);
+    assert.match(summary, /6 were missing cover art/);
+    assert.match(summary, /For 6 titles, no artwork was available or the movie match was ambiguous/);
+    assert.equal(app.calls.length, 6);
 });
