@@ -281,6 +281,47 @@
     let scanning = false;
     let stopRequested = false;
 
+    async function pauseScan(seconds, message) {
+        for (let remaining = seconds; remaining > 0 && !stopRequested && isAdmin(); remaining--) {
+            scanStatus.textContent = `${message} Continuing automatically in ${remaining}s...`;
+            await new Promise(resolve => window.setTimeout(resolve, 1000));
+        }
+    }
+
+    // A slow or throttled provider should not require another button click.
+    async function lookupCoverWithRetry(release, progress) {
+        for (let attempt = 0; !stopRequested && isAdmin(); attempt++) {
+            scanStatus.textContent = `Looking up ${release.release_title || release.upc}... ${progress()}`;
+            let result, lookupError;
+            try {
+                const response = await supabase.functions.invoke("enrich-upc", {
+                    body: { physicalReleaseId: release.id, coverOnly: true }
+                });
+                result = response.data;
+                lookupError = response.error;
+            } catch (error) {
+                lookupError = error;
+            }
+            if (result?.status === "configuration_required") throw new Error(result.message);
+            if (!lookupError && result?.status !== "rate_limited" && result?.status !== "failed") return result;
+            const statusCode = Number(lookupError?.context?.status || 0);
+            const message = lookupError ? await readFunctionError(lookupError) : result?.message || "Cover lookup temporarily unavailable.";
+            if ([401, 403].includes(statusCode)) throw new Error(message);
+            if (statusCode >= 400 && statusCode < 500 && ![408, 429].includes(statusCode)) {
+                return { status: "failed", message };
+            }
+            const throttled = result?.status === "rate_limited" || statusCode === 429;
+            // Continue waiting for provider quotas; cap retries for other errors so one DVD cannot block the library.
+            if (!throttled && attempt >= 3) return { status: "failed", message };
+            const retryAfter = Number(lookupError?.context?.headers?.get?.("Retry-After"));
+            const seconds = throttled
+                ? Math.max(30, Math.min(900, retryAfter || 30 * Math.pow(2, Math.min(attempt, 5))))
+                : 5 * Math.pow(2, Math.min(attempt, 3));
+            await pauseScan(seconds, `${message} ${progress()}`);
+        }
+        return null;
+    }
+
     async function scanMissingCovers() {
         if (!isAdmin() || scanning) return;
         scanning = true;
@@ -309,20 +350,8 @@
                 for (const release of data) {
                     if (stopRequested || !isAdmin()) break;
                     lastId = release.id;
-                    scanStatus.textContent = `Looking up ${release.release_title || release.upc}... ${progress()}`;
-                    const { data: result, error: lookupError } = await supabase.functions.invoke("enrich-upc", {
-                        body: { physicalReleaseId: release.id, coverOnly: true }
-                    });
-                    if (lookupError) {
-                        // Stop on transport/auth/server errors instead of repeatedly calling a failing service.
-                        failed++;
-                        throw new Error(await readFunctionError(lookupError));
-                    }
-                    if (["rate_limited", "configuration_required"].includes(result?.status)) {
-                        ending = result.message || "Provider rate limit reached. Try again later.";
-                        stopRequested = true;
-                        break;
-                    }
+                    const result = await lookupCoverWithRetry(release, progress);
+                    if (!result || stopRequested || !isAdmin()) break;
                     checked++;
                     if (result?.status === "completed") added++;
                     else if (result?.status === "not_found") unavailable++;
@@ -348,7 +377,7 @@
     if (stopButton) stopButton.addEventListener("click", () => {
         stopRequested = true;
         stopButton.disabled = true;
-        scanStatus.textContent = "Stopping after the current lookup...";
+        scanStatus.textContent = "Stopping scan...";
     });
 
     function initializeForProfile(profile) {

@@ -30,8 +30,11 @@ matches and missing posters require a manual upload.
 
 Progress shows added, unavailable, skipped, and failed lookups. Stop Scan finishes
 the current request before stopping. Keep the page open. Running it again skips
-covers already added. Rate limits or missing/invalid TMDb credentials stop the scan
-with an actionable message.
+covers already added. Provider rate limits pause and retry automatically, respecting Retry-After where
+available. Other temporary failures retry three times, then count that release as
+failed and continue through the library. Missing/invalid TMDb credentials or an
+expired login stop the scan with an actionable message. Only releases without
+cover URLs are scanned; existing covers are excluded, with no ten-title limit.
 
 Set the **TMDB_READ_ACCESS_TOKEN** Supabase Edge Function secret to your TMDb API
 Read Access Token (not the shorter v3 API key). Keep it out of frontend code and
