@@ -221,3 +221,10 @@ const initialPage =
     "dashboard";
 
 showPage(initialPage);
+
+
+document.querySelectorAll("[data-completeness]").forEach(button => {
+    button.addEventListener("click", () => {
+        window.DVD_INVENTORY.showCompleteness(button.dataset.completeness);
+    });
+});

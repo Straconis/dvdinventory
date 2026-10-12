@@ -19,6 +19,7 @@
     const searchStatus = document.getElementById("searchStatus");
 
     let releases = [];
+    let libraryReleases = [];
     let loading = false;
     let authenticated = false;
     let searchTimer = null;
@@ -400,7 +401,12 @@
 
     function renderInventory() {
         const showMultiple = quantityFilter.value === "multiple";
-        const visibleReleases = showMultiple
+        const completeness = ["missing-covers", "missing-details"].includes(quantityFilter.value);
+        const visibleReleases = completeness
+            ? libraryReleases.filter(item => quantityFilter.value === "missing-covers"
+                ? !item.release.cover_image_url
+                : !item.release.release_title || !item.release.format || item.release.release_year == null || !item.release.studio)
+            : showMultiple
             ? releases.filter((item) => item.quantity > 1)
             : releases;
         const totalCopies = visibleReleases.reduce(
@@ -412,7 +418,9 @@
             : "releases";
         const copyWord = totalCopies === 1 ? "copy" : "copies";
 
-        inventorySummary.textContent = showMultiple
+        inventorySummary.textContent = completeness
+            ? `${visibleReleases.length} ${releaseWord} ${quantityFilter.value === "missing-covers" ? "missing cover art" : "missing a title, format, release year, or studio"} across the full library | ${totalCopies} available ${copyWord}`
+            : showMultiple
             ? `${visibleReleases.length} ${releaseWord} with multiple copies | ` +
                 `${totalCopies} available ${copyWord}`
             : `${visibleReleases.length} ${releaseWord} | ` +
@@ -420,7 +428,9 @@
         renderResults(
             inventoryList,
             visibleReleases,
-            showMultiple
+            completeness
+                ? "No DVD editions match this completeness filter."
+                : showMultiple
                 ? "No DVD editions currently have a quantity higher than 1."
                 : "No DVDs are currently available in inventory."
         );
@@ -513,6 +523,24 @@
             }
 
             releases = groupInventory(data || []);
+            // Include checked-out and zero-stock editions so dashboard counts and drill-downs agree.
+            const library = [];
+            let cursor = 0;
+            while (true) {
+                const { data: page, error: pageError } = await supabase.from("physical_releases")
+                    .select("id, upc, release_title, cover_image_url, edition, format, release_year, studio, notes, titles(title, original_title, year)")
+                    .gt("id", cursor).order("id", { ascending: true }).limit(500);
+                if (pageError) throw pageError;
+                if (!page || !page.length) break;
+                library.push(...page);
+                cursor = page[page.length - 1].id;
+            }
+            const available = new Map(releases.map(item => [String(item.release.id), item]));
+            libraryReleases = library.map(release => ({
+                release,
+                quantity: available.get(String(release.id))?.quantity || 0,
+                locations: available.get(String(release.id))?.locations || []
+            })).sort((a, b) => releaseName(a.release).localeCompare(releaseName(b.release)));
             setStatus(inventoryStatus, "");
             renderInventory();
             renderSearch();
@@ -520,6 +548,7 @@
         catch (error) {
             console.error("Failed to load inventory:", error);
             releases = [];
+            libraryReleases = [];
             inventorySummary.textContent = "Inventory unavailable";
             inventoryList.replaceChildren(
                 textElement(
@@ -558,6 +587,15 @@
     refreshButton.addEventListener("click", loadInventory);
 
     quantityFilter.addEventListener("change", renderInventory);
+
+    window.DVD_INVENTORY = Object.freeze({
+        showCompleteness(filter) {
+            if (!["missing-covers", "missing-details"].includes(filter)) return;
+            quantityFilter.value = filter;
+            renderInventory();
+            window.DVD_APP.showPage("inventory");
+        }
+    });
 
     searchInput.addEventListener("input", () => {
         window.clearTimeout(searchTimer);

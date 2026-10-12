@@ -2206,3 +2206,15 @@ button:disabled {
 .dvd-cover-preview { display: block; max-width: 180px; max-height: 260px; object-fit: contain; margin-bottom: 1rem; }
 .inventory-cover { width: 64px; height: 90px; object-fit: contain; float: left; margin: 0 12px 8px 0; }
 .dvd-cover-preview.hidden { display: none; }
+
+.stat-card-link {
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+.stat-card-link:hover, .stat-card-link:focus-visible {
+    outline: 2px solid var(--accent, #38bdf8);
+    outline-offset: 2px;
+}
