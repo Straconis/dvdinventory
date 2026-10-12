@@ -309,10 +309,6 @@
                 for (const release of data) {
                     if (stopRequested || !isAdmin()) break;
                     lastId = release.id;
-                    if (!/^\d{8,14}$/.test(release.upc || "")) {
-                        checked++; skipped++;
-                        continue;
-                    }
                     scanStatus.textContent = `Looking up ${release.release_title || release.upc}... ${progress()}`;
                     const { data: result, error: lookupError } = await supabase.functions.invoke("enrich-upc", {
                         body: { physicalReleaseId: release.id, coverOnly: true }
@@ -322,7 +318,7 @@
                         failed++;
                         throw new Error(await readFunctionError(lookupError));
                     }
-                    if (result?.status === "rate_limited") {
+                    if (["rate_limited", "configuration_required"].includes(result?.status)) {
                         ending = result.message || "Provider rate limit reached. Try again later.";
                         stopRequested = true;
                         break;

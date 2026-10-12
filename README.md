@@ -22,12 +22,19 @@ tote locations, quantities, checkouts, and returns.
 ## Missing cover scan
 
 Administrators can use **Administration → Missing Cover Art → Find Missing Covers**
-to look up releases without cover art through the existing UPC provider. The scan
-preserves existing covers and all movie metadata, including verified records.
-Progress shows added, unavailable, skipped, and failed lookups. Stop Scan finishes
-the current request before stopping. Keep the page open; provider limits stop the
-scan, and running it again skips covers already added. Releases without a usable
-UPC require a manually uploaded cover.
+to look up releases without cover art. The scan tries UPC artwork first, then
+searches TMDb for an exact, unambiguous movie title match. Posters may differ from
+DVD packaging. Existing covers and movie metadata are preserved, including
+verified records. Movies without a UPC can use the title fallback. Ambiguous
+matches and missing posters require a manual upload.
 
-Deploy the updated `enrich-upc` Supabase Edge Function together with the web files
-for this feature. No database migration or new provider credentials are required.
+Progress shows added, unavailable, skipped, and failed lookups. Stop Scan finishes
+the current request before stopping. Keep the page open. Running it again skips
+covers already added. Rate limits or missing/invalid TMDb credentials stop the scan
+with an actionable message.
+
+Set the **TMDB_READ_ACCESS_TOKEN** Supabase Edge Function secret to your TMDb API
+Read Access Token (not the shorter v3 API key). Keep it out of frontend code and
+Git. Obtain it through https://www.themoviedb.org/settings/api using the appropriate
+personal/commercial API arrangement. Attribution appears under Artwork credits.
+Deploy `enrich-upc` together with the web files. No database migration is required.

@@ -58,6 +58,45 @@ function parseProviderTitle(value: unknown) {
     };
 }
 
+// Product names often contain format, edition, year, and seller notes.
+function cleanMovieTitle(value: string) {
+    return value.replace(/\s*[\[(].*$/, "")
+        .replace(/\s+(?:DVD|Blu-ray|4K|Widescreen|Fullscreen|Unrated|Special Edition|Feature Films for Families|Sony Pictures|Paramount)\b.*$/i, "")
+        .replace(/\s*,?\s*(?:19|20)\d{2}\s*$/, "")
+        .trim();
+}
+
+function titleKey(value: string) {
+    return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+}
+
+async function findMoviePoster(title: string, token: string): Promise<{
+    status: string; message: string; cover?: string;
+}> {
+    const query = cleanMovieTitle(title);
+    if (!query || /^UPC\s|^NO-UPC-/i.test(query)) {
+        return { status: "not_found", message: "A movie title is needed for poster lookup." };
+    }
+    const response = await fetch(
+        "https://api.themoviedb.org/3/search/movie?include_adult=false&language=en-US&query=" + encodeURIComponent(query),
+        { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, signal: AbortSignal.timeout(12000) }
+    );
+    if (response.status === 429) return { status: "rate_limited", message: "TMDb rate limit reached. Try again later." };
+    if ([401, 403].includes(response.status)) return { status: "configuration_required", message: "The TMDb token is invalid or lacks access. Check TMDB_READ_ACCESS_TOKEN in Supabase." };
+    if (!response.ok) throw new Error(`TMDb returned status ${response.status}.`);
+    const payload = await response.json();
+    const matches = (Array.isArray(payload.results) ? payload.results : []).filter((movie: JsonObject) =>
+        movie.adult !== true &&
+        [movie.title, movie.original_title].some(value => typeof value === "string" && titleKey(value) === titleKey(query))
+    );
+    // Never choose a popular remake over another movie with the same title.
+    if (matches.length !== 1 || !/^\/[a-zA-Z0-9_-]+\.(jpg|png)$/.test(String(matches[0].poster_path || ""))) {
+        return { status: "not_found", message: "No unambiguous movie poster match. Refine the movie title or upload a cover." };
+    }
+    return { status: "completed", message: "Movie poster found.", cover: "https://image.tmdb.org/t/p/w500" + matches[0].poster_path };
+}
+
 async function setQueueFailure(
     client: ReturnType<typeof createClient>,
     physicalReleaseId: number,
@@ -165,27 +204,40 @@ Deno.serve(async (request) => {
             if (release.cover_image_url) {
                 return jsonResponse({ status: "skipped", message: "Existing cover preserved." });
             }
-            if (!/^\d{8,14}$/.test(release.upc || "")) {
-                return jsonResponse({ status: "not_found", message: "No usable UPC for cover lookup." });
+            let cover: string | null = null;
+            let providerTitle: string | null = null;
+            let upcLimited = false;
+            if (/^\d{8,14}$/.test(release.upc || "")) {
+                const response = await fetch(
+                    "https://api.upcitemdb.com/prod/trial/lookup?upc=" + encodeURIComponent(release.upc),
+                    { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(12000) }
+                );
+                upcLimited = response.status === 429;
+                if (response.ok) {
+                    const payload = await response.json();
+                    const item = Array.isArray(payload.items) ? payload.items[0] : null;
+                    providerTitle = item ? parseProviderTitle(item.title).title : null;
+                    cover = Array.isArray(item?.images)
+                        ? item.images.find((url: unknown) => typeof url === "string" && /^https?:\/\//i.test(url)) || null
+                        : null;
+                } else if (![400, 404, 429].includes(response.status)) {
+                    throw new Error(`UPC provider returned status ${response.status}.`);
+                }
             }
-            const response = await fetch(
-                "https://api.upcitemdb.com/prod/trial/lookup?upc=" + encodeURIComponent(release.upc),
-                { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(12000) }
-            );
-            if (response.status === 429) {
-                return jsonResponse({ status: "rate_limited", message: "UPC provider rate limit reached. Try again later." });
-            }
-            if ([400, 404].includes(response.status)) {
-                return jsonResponse({ status: "not_found", message: "No cover available for this UPC." });
-            }
-            if (!response.ok) throw new Error(`UPC provider returned status ${response.status}.`);
-            const payload = await response.json();
-            const item = Array.isArray(payload.items) ? payload.items[0] : null;
-            const cover = Array.isArray(item?.images)
-                ? item.images.find((url: unknown) => typeof url === "string" && /^https?:\/\//i.test(url))
-                : null;
             if (!cover) {
-                return jsonResponse({ status: "not_found", message: "No cover available for this UPC." });
+                const token = Deno.env.get("TMDB_READ_ACCESS_TOKEN");
+                const title = providerTitle || release.release_title;
+                if (!token) {
+                    return jsonResponse({ status: "configuration_required", message: "Add the TMDB_READ_ACCESS_TOKEN secret in Supabase to enable movie poster lookup." });
+                }
+                if (title) {
+                    const posterResult = await findMoviePoster(title, token);
+                    if (posterResult.status !== "completed") return jsonResponse(posterResult);
+                    cover = posterResult.cover!;
+                }
+            }
+            if (!cover) {
+                return jsonResponse({ status: upcLimited ? "rate_limited" : "not_found", message: upcLimited ? "UPC provider rate limit reached. Try again later." : "No cover or confident movie poster match available." });
             }
             // Conditional write also protects a cover uploaded while the lookup was running.
             const { data, error } = await adminClient.from("physical_releases")
