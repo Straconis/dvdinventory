@@ -105,3 +105,18 @@ test('UPC rate limit still allows a TMDb fallback', async () => {
     const result = await lookup({ providerStatus: 429, token: 'token', results: [{ title: 'Verified Movie', poster_path: '/abc.jpg' }] });
     assert.equal(result.body.status, 'completed');
 });
+
+test('known Best Buy placeholder URLs are not accepted as cover art', async () => {
+    for (const image of [
+        'https://pisces.bbystatic.com/image2/BestBuy_US/images/products/9862/9862358_sa.jpg',
+        'http://img.bbystatic.com/BestBuy_US/images/products/2053/20538121.jpg'
+    ]) {
+        const result = await lookup({ images: [image], token: 'token' });
+        assert.equal(result.body.status, 'not_found');
+        assert.equal(result.updates.length, 0);
+    }
+});
+test('existing known placeholders can be replaced by real artwork', async () => {
+    const result = await lookup({ existingCover: 'https://pisces.bbystatic.com/image2/BestBuy_US/images/products/9862/9862358_sa.jpg' });
+    assert.equal(result.body.status, 'completed');
+});

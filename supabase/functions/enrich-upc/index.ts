@@ -25,6 +25,12 @@ function optionalString(value: unknown) {
     return normalized || null;
 }
 
+function usableCover(value: unknown): value is string {
+    if (typeof value !== "string" || !/^https?:\/\//i.test(value)) return false;
+    // These product URLs now serve generic unavailable-art placeholders.
+    return !/\/BestBuy_US\/images\/products\/(?:9862\/9862358_sa|2053\/20538121)\.jpg(?:[?#]|$)/i.test(value);
+}
+
 function parseProviderTitle(value: unknown) {
     const original = String(value || "").trim();
     let title = original;
@@ -201,7 +207,7 @@ Deno.serve(async (request) => {
             if (profile.role !== "admin") {
                 return jsonResponse({ error: "Administrator privileges required." }, 403);
             }
-            if (release.cover_image_url) {
+            if (usableCover(release.cover_image_url)) {
                 return jsonResponse({ status: "skipped", message: "Existing cover preserved." });
             }
             let cover: string | null = null;
@@ -218,7 +224,7 @@ Deno.serve(async (request) => {
                     const item = Array.isArray(payload.items) ? payload.items[0] : null;
                     providerTitle = item ? parseProviderTitle(item.title).title : null;
                     cover = Array.isArray(item?.images)
-                        ? item.images.find((url: unknown) => typeof url === "string" && /^https?:\/\//i.test(url)) || null
+                        ? item.images.find((url: unknown) => usableCover(url)) || null
                         : null;
                 } else if (![400, 404, 429].includes(response.status)) {
                     throw new Error(`UPC provider returned status ${response.status}.`);
@@ -240,11 +246,13 @@ Deno.serve(async (request) => {
                 return jsonResponse({ status: upcLimited ? "rate_limited" : "not_found", message: upcLimited ? "UPC provider rate limit reached. Try again later." : "No cover or confident movie poster match available." });
             }
             // Conditional write also protects a cover uploaded while the lookup was running.
-            const { data, error } = await adminClient.from("physical_releases")
+            let coverUpdate = adminClient.from("physical_releases")
                 .update({ cover_image_url: cover })
-                .eq("id", physicalReleaseId)
-                .or("cover_image_url.is.null,cover_image_url.eq.")
-                .select("id");
+                .eq("id", physicalReleaseId);
+            coverUpdate = release.cover_image_url
+                ? coverUpdate.eq("cover_image_url", release.cover_image_url)
+                : coverUpdate.or("cover_image_url.is.null,cover_image_url.eq.");
+            const { data, error } = await coverUpdate.select("id");
             if (error) throw error;
             return jsonResponse({
                 status: data?.length ? "completed" : "skipped",
@@ -381,7 +389,7 @@ Deno.serve(async (request) => {
             studio: optionalString(item.brand),
             asin: optionalString(item.asin),
             cover_image_url: Array.isArray(item.images)
-                ? optionalString(item.images[0])
+                ? item.images.find((url: unknown) => usableCover(url)) || null
                 : null
         };
 
