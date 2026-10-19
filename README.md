@@ -19,6 +19,18 @@ tote locations, quantities, checkouts, and returns.
 - Inventory transaction history
 - Mobile-friendly web interface
 
+## Tote contents quantity
+
+The Totes listing shows the total units currently stored in each active or
+archived tote, including zero for empty totes. This sums `inventory.quantity`
+across releases, rather than counting editions or discs. Checked-out and sold
+units are excluded because those operations already reduce stored inventory.
+Counts reload with the listing and after inventory changes. Inventory is read
+in pages so response limits do not truncate totals. No database migration is
+required.
+
+Run the regression suite with `npm test`.
+
 ## Missing cover scan
 
 Administrators can use **Administration → Missing Cover Art → Find Missing Covers**

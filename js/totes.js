@@ -538,6 +538,54 @@
         }
     }
 
+    async function loadToteQuantities() {
+        const quantities = new Map();
+        let lastId = null;
+
+        // Read every page, even when the server caps responses below our limit.
+        // Count copies currently in storage, not editions or checkout history.
+        while (true) {
+            let query = supabase
+                .from("inventory")
+                .select("id, tote_id, quantity")
+                .gt("quantity", 0)
+                .order("id", { ascending: true })
+                .limit(1000);
+
+            if (lastId !== null) {
+                query = query.gt("id", lastId);
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                throw error;
+            }
+
+            if (!data || data.length === 0) {
+                return quantities;
+            }
+
+            for (const row of data) {
+                quantities.set(
+                    row.tote_id,
+                    (quantities.get(row.tote_id) || 0) + row.quantity
+                );
+            }
+
+            lastId = data[data.length - 1].id;
+        }
+    }
+
+    function renderToteQuantity(tote) {
+        return createTextElement(
+            "p",
+            "tote-item-quantity",
+            `Contents quantity: ${tote.contents_quantity} ` +
+                (tote.contents_quantity === 1 ? "unit" : "units")
+        );
+    }
+
     function renderToteCard(tote) {
         const card = document.createElement("article");
         const heading = document.createElement("div");
@@ -574,6 +622,8 @@
                 locationText
             )
         );
+
+        card.appendChild(renderToteQuantity(tote));
 
         const actions = document.createElement("div");
         const contentsPanel = document.createElement("div");
@@ -690,6 +740,8 @@
                 `Archived ${archivedDate}`
             )
         );
+
+        card.appendChild(renderToteQuantity(tote));
 
         const actions = document.createElement("div");
         let restoreButton;
@@ -816,7 +868,11 @@
                 throw error;
             }
 
-            renderTotes(data || []);
+            const quantities = await loadToteQuantities();
+            renderTotes((data || []).map((tote) => ({
+                ...tote,
+                contents_quantity: quantities.get(tote.id) || 0
+            })));
 
             if (!settings.silent) {
                 const count =
@@ -1101,6 +1157,10 @@
         loadTotes({
             silent: true
         });
+    });
+
+    window.addEventListener("dvd-inventory-changed", () => {
+        loadTotes({ silent: true });
     });
 
     window.DVD_TOTES = Object.freeze({

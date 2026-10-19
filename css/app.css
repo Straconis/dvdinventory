@@ -1760,11 +1760,13 @@ button:disabled {
 }
 
 .tote-item-description,
+.tote-item-quantity,
 .tote-item-location,
 .tote-empty-state {
     margin: 0.4rem 0 0;
 }
 
+.tote-item-quantity,
 .tote-item-location,
 .tote-empty-state {
     opacity: 0.75;
