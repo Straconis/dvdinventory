@@ -3,6 +3,15 @@
 Web-based DVD inventory management system for tracking DVD editions,
 tote locations, quantities, checkouts, and returns.
 
+## Self-contained WordPress plugin
+
+An independent WordPress plugin is available in [wordpress/](wordpress/README.md).
+It stores records in WordPress and covers in the local media library, with no
+external services or API keys. Download `dvd-inventory.zip` from the repository's
+GitHub Releases, upload it through WordPress Plugins, and add `[dvd_inventory]`
+to a page. The inventory is private by default; `public="yes"` enables sharing.
+This plugin does not connect to or migrate data from the standalone app below.
+
 ## Planned Features
 
 - UPC-based DVD identification
